@@ -7,7 +7,7 @@
 
 Sistema SaaS completo para gestão de clínicas de fisioterapia com **interface personalizável** e **sistema multi-usuário**.
 
-![FisioHub Preview](docs/preview.png)
+![FisioHub Logo](docs/3.png)
 
 ## ✨ Características Principais
 
