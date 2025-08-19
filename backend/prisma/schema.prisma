@@ -86,3 +86,124 @@ model Evolution {
 
   @@map("evolutions")
 }
+
+model Indicator {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now())
+  collaborator String?
+  sector      String?
+  shift       String?
+  
+  // Indicadores de Internação
+  patientsHospitalized     Int? @default(0)
+  patientsPrescribed       Int? @default(0)
+  patientsCaptured         Int? @default(0)
+  discharges               Int? @default(0)
+  intubations              Int? @default(0)
+  
+  // Indicadores Respiratórios
+  respiratoryTherapyCount       Int? @default(0)
+  extubationEffectivenessRate   Float? @default(0)
+  deaths                        Int? @default(0)
+  pcr                           Int? @default(0)
+  respiratoryTherapyRate        Float? @default(0)
+  
+  // Indicadores Motores
+  motorTherapyRate             Float? @default(0)
+  artificialAirwayPatients     Int? @default(0)
+  aspirationRate               Float? @default(0)
+  
+  // Indicadores de Mobilização
+  sedestationExpected          Int? @default(0)
+  sedestationRate              Float? @default(0)
+  orthostatismExpected         Int? @default(0)
+  orthostatismRate             Float? @default(0)
+  ambulationRate               Float? @default(0)
+  
+  // Outros Indicadores
+  pronation                    Int? @default(0)
+  oxygenTherapyPatients       Int? @default(0)
+  multidisciplinaryVisits     Int? @default(0)
+  nonInvasiveVentilationRate  Float? @default(0)
+  invasiveMechanicalVentRate  Float? @default(0)
+  tracheostomy                Int? @default(0)
+  nonAmbulatingPatients       Int? @default(0)
+  fallsAndIncidents           Int? @default(0)
+  
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId String?
+  patient   Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("indicators")
+}
+
+model BarthelScale {
+  id          String   @id @default(cuid())
+  
+  // 10 atividades da Escala de Barthel (0-100 pontos total)
+  feeding           Int @default(0) // 0, 5, 10
+  bathing           Int @default(0) // 0, 5
+  grooming          Int @default(0) // 0, 5
+  dressing          Int @default(0) // 0, 5, 10
+  bowelControl      Int @default(0) // 0, 5, 10
+  bladderControl    Int @default(0) // 0, 5, 10
+  toileting         Int @default(0) // 0, 5, 10
+  transfer          Int @default(0) // 0, 5, 10, 15
+  mobility          Int @default(0) // 0, 5, 10, 15
+  stairs            Int @default(0) // 0, 5, 10
+  
+  totalScore        Int @default(0) // Soma total (0-100)
+  classification    String @default("") // Dependência total, severa, moderada, leve, independente
+  
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId    String
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  evolutionId  String?  @unique
+  evolution    Evolution? @relation(fields: [evolutionId], references: [id], onDelete: SetNull)
+  
+  evaluationDate DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@map("barthel_scales")
+}
+
+model MrcScale {
+  id          String   @id @default(cuid())
+  
+  // Grupos musculares - Medical Research Council (0-5 cada)
+  shoulderAbduction     Int @default(0) // Abdução do ombro
+  elbowFlexion          Int @default(0) // Flexão do cotovelo  
+  wristExtension        Int @default(0) // Extensão do punho
+  hipFlexion            Int @default(0) // Flexão do quadril
+  kneeExtension         Int @default(0) // Extensão do joelho
+  ankleFlexion          Int @default(0) // Flexão do tornozelo
+  
+  // Pode adicionar mais grupos conforme necessário
+  neckFlexion           Int @default(0) // Flexão do pescoço
+  trunkFlexion          Int @default(0) // Flexão do tronco
+  shoulderAdduction     Int @default(0) // Adução do ombro
+  elbowExtension        Int @default(0) // Extensão do cotovelo
+  
+  totalScore            Int @default(0) // Soma total
+  averageScore          Float @default(0) // Média (total/número de grupos)
+  classification        String @default("") // Classificação da força
+  
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId    String
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  evolutionId  String?  @unique
+  evolution    Evolution? @relation(fields: [evolutionId], references: [id], onDelete: SetNull)
+  
+  evaluationDate DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@map("mrc_scales")
+}
