@@ -20,16 +20,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('fisiohub-token');
-    const savedUser = localStorage.getItem('fisiohub-user');
+    // Verificar se estamos no cliente (browser)
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('fisiohub-token');
+      const savedUser = localStorage.getItem('fisiohub-user');
 
-    if (token && savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('fisiohub-token');
-        localStorage.removeItem('fisiohub-user');
+      if (token && savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch (error) {
+          console.error('Error parsing saved user:', error);
+          localStorage.removeItem('fisiohub-token');
+          localStorage.removeItem('fisiohub-user');
+        }
       }
     }
 
@@ -43,8 +46,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.success && response.data) {
         const { user: userData, token } = response.data;
         
-        localStorage.setItem('fisiohub-token', token);
-        localStorage.setItem('fisiohub-user', JSON.stringify(userData));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('fisiohub-token', token);
+          localStorage.setItem('fisiohub-user', JSON.stringify(userData));
+        }
         setUser(userData);
       } else {
         throw new Error(response.message || 'Login failed');
@@ -61,8 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.success && response.data) {
         const { user: userData, token } = response.data;
         
-        localStorage.setItem('fisiohub-token', token);
-        localStorage.setItem('fisiohub-user', JSON.stringify(userData));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('fisiohub-token', token);
+          localStorage.setItem('fisiohub-user', JSON.stringify(userData));
+        }
         setUser(userData);
       } else {
         throw new Error(response.message || 'Registration failed');
@@ -73,8 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('fisiohub-token');
-    localStorage.removeItem('fisiohub-user');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('fisiohub-token');
+      localStorage.removeItem('fisiohub-user');
+    }
     setUser(null);
   };
 

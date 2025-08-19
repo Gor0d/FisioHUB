@@ -1,16 +1,71 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
 import { ThemeSelector, CompanyNameInput } from '@/components/ui/theme-selector';
-import { LogOut, Users, Calendar, Activity, TrendingUp, Shield, UserPlus, Settings } from 'lucide-react';
+import { LogOut, Users, Calendar, Activity, TrendingUp, Shield, UserPlus, Settings, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
+
+interface DashboardStats {
+  totalPatients: number;
+  totalAppointments: number;
+  totalBarthelScales: number;
+  totalMrcScales: number;
+  totalImprovements: number;
+}
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalPatients: 0,
+    totalAppointments: 0,
+    totalBarthelScales: 0,
+    totalMrcScales: 0,
+    totalImprovements: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Buscar pacientes
+      const patientsResponse = await api.get('/api/patients');
+      const totalPatients = patientsResponse.data?.data?.pagination?.total || 0;
+      
+      // Buscar escalas Barthel
+      const barthelResponse = await api.get('/api/scales/barthel');
+      const totalBarthelScales = barthelResponse.data?.data?.pagination?.total || 0;
+      
+      // Buscar escalas MRC
+      const mrcResponse = await api.get('/api/scales/mrc');
+      const totalMrcScales = mrcResponse.data?.data?.pagination?.total || 0;
+      
+      // Buscar melhorias
+      const improvementsResponse = await api.get('/api/scales/improvements/dashboard');
+      const totalImprovements = improvementsResponse.data?.data?.summary?.totalImprovements || 0;
+      
+      setStats({
+        totalPatients,
+        totalAppointments: 0, // TODO: implementar quando appointments estiver funcional
+        totalBarthelScales,
+        totalMrcScales,
+        totalImprovements
+      });
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,6 +87,16 @@ export default function DashboardPage() {
               )}
               
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={fetchDashboardData}
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  <Activity className="h-4 w-4" />
+                  {loading ? 'Atualizando...' : 'Atualizar'}
+                </Button>
                 <span className="text-sm text-muted-foreground">
                   Olá, {user?.name}
                 </span>
@@ -70,9 +135,14 @@ export default function DashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">
+                {loading ? '...' : stats.totalPatients}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Nenhum paciente cadastrado ainda
+                {stats.totalPatients === 0 ? 
+                  'Nenhum paciente cadastrado ainda' : 
+                  `${stats.totalPatients} paciente${stats.totalPatients > 1 ? 's' : ''} cadastrado${stats.totalPatients > 1 ? 's' : ''}`
+                }
               </p>
             </CardContent>
           </Card>
@@ -95,14 +165,19 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Sessões Realizadas
+                Avaliações Realizadas
               </CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">
+                {loading ? '...' : stats.totalBarthelScales + stats.totalMrcScales}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Nenhuma sessão realizada ainda
+                {(stats.totalBarthelScales + stats.totalMrcScales) === 0 ? 
+                  'Nenhuma avaliação realizada ainda' : 
+                  `${stats.totalBarthelScales} Barthel + ${stats.totalMrcScales} MRC`
+                }
               </p>
             </CardContent>
           </Card>
@@ -110,14 +185,19 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Receita do Mês
+                Melhorias Identificadas
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ 0,00</div>
+              <div className="text-2xl font-bold">
+                {loading ? '...' : stats.totalImprovements}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Nenhuma receita registrada
+                {stats.totalImprovements === 0 ? 
+                  'Nenhuma melhoria registrada' : 
+                  `${stats.totalImprovements} melhoria${stats.totalImprovements > 1 ? 's' : ''} identificada${stats.totalImprovements > 1 ? 's' : ''}`
+                }
               </p>
             </CardContent>
           </Card>
@@ -135,21 +215,67 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-sm">Cadastrar primeiro paciente</span>
+                  <div className={`w-2 h-2 rounded-full ${stats.totalPatients > 0 ? 'bg-green-500' : 'bg-primary'}`}></div>
+                  <span className="text-sm">{stats.totalPatients > 0 ? '✅ Pacientes cadastrados' : 'Cadastrar primeiro paciente'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-muted rounded-full"></div>
                   <span className="text-sm text-muted-foreground">Criar primeiro agendamento</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-muted rounded-full"></div>
-                  <span className="text-sm text-muted-foreground">Registrar primeira evolução</span>
+                  <div className={`w-2 h-2 rounded-full ${(stats.totalBarthelScales + stats.totalMrcScales) > 0 ? 'bg-green-500' : 'bg-muted'}`}></div>
+                  <span className={`text-sm ${(stats.totalBarthelScales + stats.totalMrcScales) > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    {(stats.totalBarthelScales + stats.totalMrcScales) > 0 ? '✅ Avaliações realizadas' : 'Registrar primeira avaliação'}
+                  </span>
                 </div>
               </div>
-              <Button className="w-full">
-                Cadastrar Paciente
-              </Button>
+              <Link href="/dashboard/pacientes">
+                <Button className="w-full">
+                  Cadastrar Paciente
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-green-600" />
+                Indicadores Clínicos
+              </CardTitle>
+              <CardDescription>
+                Sistema de registro de indicadores quantitativos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                  <span className="text-sm">Indicadores gerais</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                  <span className="text-sm">Escala de Barthel (AVD)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                  <span className="text-sm">Escala MRC (Força)</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Link href="/indicators">
+                  <Button className="w-full bg-green-600 hover:bg-green-700 flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Acessar Indicadores
+                  </Button>
+                </Link>
+                <Link href="/dashboard/melhorias">
+                  <Button variant="outline" className="w-full flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Ver Melhorias
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
 

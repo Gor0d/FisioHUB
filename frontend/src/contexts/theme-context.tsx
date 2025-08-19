@@ -19,33 +19,41 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = (newTheme: ThemeConfig) => {
     setThemeState(newTheme);
     applyTheme(newTheme);
-    localStorage.setItem('fisiohub-theme', JSON.stringify(newTheme));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('fisiohub-theme', JSON.stringify(newTheme));
+    }
   };
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('fisiohub-theme');
-    const savedCompanyName = localStorage.getItem('fisiohub-company-name');
-    
-    if (savedTheme) {
-      try {
-        const parsedTheme = JSON.parse(savedTheme);
-        setThemeState(parsedTheme);
-        applyTheme(parsedTheme);
-      } catch (error) {
-        console.error('Error parsing saved theme:', error);
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('fisiohub-theme');
+      const savedCompanyName = localStorage.getItem('fisiohub-company-name');
+      
+      if (savedTheme) {
+        try {
+          const parsedTheme = JSON.parse(savedTheme);
+          setThemeState(parsedTheme);
+          applyTheme(parsedTheme);
+        } catch (error) {
+          console.error('Error parsing saved theme:', error);
+        }
+      } else {
+        applyTheme(defaultTheme);
+      }
+
+      if (savedCompanyName) {
+        setCompanyName(savedCompanyName);
       }
     } else {
       applyTheme(defaultTheme);
-    }
-
-    if (savedCompanyName) {
-      setCompanyName(savedCompanyName);
     }
   }, []);
 
   const handleSetCompanyName = (name: string) => {
     setCompanyName(name);
-    localStorage.setItem('fisiohub-company-name', name);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('fisiohub-company-name', name);
+    }
   };
 
   return (

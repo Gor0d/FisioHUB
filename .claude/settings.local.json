@@ -23,7 +23,11 @@
       "Bash(git commit:*)",
       "Bash(git branch:*)",
       "Bash(git push:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(del /f \"node_modules\\.prisma\\client\\query_engine-windows.dll.node\")",
+      "Bash(rm:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm start)"
     ],
     "deny": [],
     "ask": []

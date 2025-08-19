@@ -9,6 +9,10 @@ import { patientRoutes } from '@/routes/patients';
 import { appointmentRoutes } from '@/routes/appointments';
 import { evolutionRoutes } from '@/routes/evolutions';
 import { dashboardRoutes } from '@/routes/dashboard';
+import indicatorsRoutes from '@/routes/indicators';
+import barthelScalesRoutes from '@/routes/barthelScales';
+import mrcScalesRoutes from '@/routes/mrcScales';
+import { scalesRouter } from '@/routes/scales';
 
 dotenv.config();
 
@@ -33,6 +37,10 @@ app.use('/api/patients', patientRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/evolutions', evolutionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/indicators', indicatorsRoutes);
+app.use('/api/barthel-scales', barthelScalesRoutes);
+app.use('/api/mrc-scales', mrcScalesRoutes);
+app.use('/api/scales', scalesRouter);
 
 app.use(errorHandler);
 

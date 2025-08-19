@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reunião em andamento</title>
+  <style>
+    :root {
+      --bg: #1f1f23;
+      --panel: #2a2a2f;
+      --panel-2: #1b1b1f;
+      --text: #e7e7ea;
+      --muted: #a7a7b0;
+      --accent: #6b5bd2; /* roxo neutro, não oficial */
+      --danger: #e83d4a;
+      --success: #29c16b;
+      --warning: #f3b947;
+      --shadow: 0 12px 24px rgba(0,0,0,.35);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background: radial-gradient(1200px 800px at 70% 10%, #252531, var(--bg)); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    .app { display:flex; flex-direction:column; min-height:100svh; }
+
+    /* Top bar */
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.05)); backdrop-filter: blur(6px); position: sticky; top:0; z-index:10; border-bottom: 1px solid #2c2c35; }
+    .title { display:flex; align-items:center; gap: 12px; font-weight: 600; letter-spacing:.2px; }
+    .pill { display:inline-flex; align-items:center; gap:8px; background: #2f2f38; border:1px solid #3d3d46; color: var(--text); padding:6px 10px; border-radius: 999px; font-size:12px; }
+    .dot { width:8px; height:8px; border-radius:999px; background: #ff3b5c; box-shadow:0 0 0 6px rgba(255,59,92,.15); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0%{ box-shadow:0 0 0 0 rgba(255,59,92,.35);} 70%{ box-shadow:0 0 0 12px rgba(255,59,92,0);} 100%{ box-shadow:0 0 0 0 rgba(255,59,92,0);} }
+
+    .right { display:flex; align-items:center; gap:12px; }
+    .badge { background:#2f2f38; border:1px solid #3d3d46; padding:6px 10px; border-radius:8px; font-size:12px; color:var(--muted); }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:36px; padding:0 12px; border-radius:10px; background:#34343d; border:1px solid #42424c; color:var(--text); cursor:pointer; box-shadow: var(--shadow); transition:transform .08s ease, filter .2s ease; }
+    .btn:active { transform: translateY(1px); }
+
+    /* Main area */
+    .main { flex:1; display:grid; grid-template-columns: 1fr 320px; gap: 16px; padding: 16px; }
+    @media (max-width: 1100px){ .main { grid-template-columns: 1fr; } .side { order: -1; } }
+
+    .stage { background: linear-gradient(180deg, #1a1a21, #17171c); border:1px solid #2c2c35; border-radius: var(--radius-lg); padding: 16px; position: relative; overflow:hidden; box-shadow: var(--shadow); }
+
+    .grid { display:grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 200px; gap: 12px; }
+    @media (max-width: 900px){ .grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 180px; } }
+    @media (max-width: 560px){ .grid { grid-template-columns: 1fr; grid-auto-rows: 180px; } }
+
+    .tile { position:relative; border-radius: 14px; background: radial-gradient(1000px 600px at 80% 0%, #242436, #1a1a26); border:1px solid #2f2f3a; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    .avatar { width:86px; height:86px; border-radius:999px; background: linear-gradient(135deg, #3c3cce, #8a66ff); display:grid; place-items:center; font-weight:700; font-size:28px; color:white; box-shadow: inset 0 0 0 6px rgba(255,255,255,.07); }
+    .name { position:absolute; left:12px; bottom:12px; padding:6px 10px; border-radius:999px; background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.08); font-size:12px; color:#f1f1f6; backdrop-filter: blur(6px); }
+
+    .speaking { outline: 2px solid #9b8bff; box-shadow: 0 0 0 3px rgba(155,139,255,.25); }
+    .muted .name::after { content:" • mudo"; color:#ff9ba9; }
+
+    /* Bottom controls */
+    .controls { position: sticky; bottom:0; display:flex; justify-content:center; padding: 14px; }
+    .controls .bar { display:flex; align-items:center; gap:12px; background: rgba(27,27,31,.8); border:1px solid #2f2f38; border-radius: 999px; padding:10px; backdrop-filter: blur(8px); box-shadow: var(--shadow); }
+    .round { width:44px; height:44px; border-radius:999px; display:inline-grid; place-items:center; background:#2c2c35; border:1px solid #3a3a45; cursor:pointer; transition: transform .08s ease; }
+    .round:active { transform: translateY(1px); }
+    .round.is-on { background: #334438; border-color:#3e5a47; }
+    .round.is-off { background: #3b2a2e; border-color:#4d343a; }
+    .leave { background: var(--danger); border-color: #ff5a6a; padding:0 18px; height:44px; border-radius:999px; font-weight:700; }
+
+    /* Sidebar */
+    .side { background: linear-gradient(180deg, #1a1a21, #17171c); border:1px solid #2c2c35; border-radius: var(--radius-lg); padding: 16px; position: relative; overflow:hidden; box-shadow: var(--shadow); display:flex; flex-direction:column; gap:16px; }
+    .side h3 { margin:0; font-size:14px; letter-spacing:.3px; color:#cfcfe6; font-weight:700; }
+    .notice { border:1px dashed #444455; background: repeating-linear-gradient(45deg, rgba(255,255,255,.02) 0 8px, rgba(255,255,255,.06) 8px 16px); border-radius:12px; padding:14px; }
+    .notice strong { display:block; font-size:16px; margin-bottom:6px; }
+    .kbd { display:inline-block; padding:2px 6px; border:1px solid #3e3e47; border-bottom-width:3px; border-radius:6px; background:#2d2d36; font-size:12px; }
+    .hint { color:var(--muted); font-size:13px; }
+
+    .watermark { position:absolute; inset:auto 12px 12px auto; opacity:.08; font-weight:900; font-size:26px; letter-spacing:2px; user-select:none; }
+
+    /* Simple SVG icons baseline */
+    .icon { width:20px; height:20px; display:inline-block; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="title">
+        <span class="pill"><span class="dot" aria-hidden="true"></span><span id="status-text">Ao vivo</span></span>
+        <div>Reunião em andamento • <span id="elapsed">00:00</span></div>
+      </div>
+      <div class="right">
+        <div class="badge" id="clock">--:--</div>
+        <button class="btn" id="btn-fullscreen" title="Tela cheia (F)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4"/><path d="M15 3h4a2 2 0 0 1 2 2v4"/><path d="M9 21H5a2 2 0 0 1-2-2v-4"/><path d="M21 15v4a2 2 0 0 1-2 2h-4"/></svg>
+          Tela cheia
+        </button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="stage">
+        <div class="grid" id="participants">
+          <!-- Tiles gerados via JS -->
+        </div>
+        <div class="watermark">EM CHAMADA</div>
+      </section>
+
+      <aside class="side">
+        <h3>Não interromper</h3>
+        <div class="notice">
+          <strong>Em chamada — Microsoft Teams* (simulado)</strong>
+          <div class="hint">Por favor, não interromper. Esta tela é uma simulação para evitar distrações.
+          </div>
+          <ul class="hint" style="margin:10px 0 0 18px; line-height:1.7">
+            <li>Pressione <span class="kbd">F</span> para alternar tela cheia</li>
+            <li>Setas ← → para alternar quem “está falando”</li>
+            <li>Barra de espaço para alternar mudo</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3>Detalhes da reunião</h3>
+          <div class="hint">Tema: <span id="topic">Sincronização de equipe</span></div>
+          <div class="hint">Organizador: <span id="host">Time Dev HAB</span></div>
+          <div class="hint">Participantes: <span id="count">0</span></div>
+        </div>
+      </aside>
+    </main>
+
+    <div class="controls">
+      <div class="bar">
+        <button class="round is-on" id="btn-mic" title="Microfone (Espaço)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="17" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <button class="round is-on" id="btn-cam" title="Câmera (C)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="12" height="12" rx="2"/><path d="M17 7l4-2v14l-4-2z"/></svg>
+        </button>
+        <button class="round" title="Compartilhar">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </button>
+        <button class="round" title="Chat">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V5a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+        </button>
+        <button class="round" title="Mais">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>
+        </button>
+        <button class="leave" title="Sair">Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Simulação leve de tela de reunião estilo Teams (sem marcas registradas).
+     * Dicas:
+     *   - Parâmetros de URL para customizar: ?titulo=...&organizador=...&participantes=Ana,Bia,Caio
+     */
+
+    const qs = new URLSearchParams(location.search);
+    const topicEl = document.getElementById('topic');
+    const hostEl = document.getElementById('host');
+    const countEl = document.getElementById('count');
+    const grid = document.getElementById('participants');
+
+    const title = qs.get('titulo') || 'Sincronização de equipe';
+    const host = qs.get('organizador') || 'Time Dev HAB';
+    const participantsParam = (qs.get('participantes') || 'Carlos Nascimento,Bia Costa,Caio Nunes,Diego Rocha,Erika Souza,Felipe Lima').split(',').map(s=>s.trim()).filter(Boolean);
+
+    topicEl.textContent = title; hostEl.textContent = host;
+
+    // Gera tiles
+    const people = participantsParam.map(name => ({
+      name,
+      initials: name.split(/\s+/).map(p=>p[0]).slice(0,2).join('').toUpperCase(),
+      muted: Math.random() > .5
+    }));
+
+    function renderTiles(){
+      grid.innerHTML = '';
+      people.forEach((p,i)=>{
+        const tile = document.createElement('div');
+        tile.className = 'tile' + (i===activeIndex ? ' speaking' : '') + (p.muted ? ' muted' : '');
+        tile.innerHTML = `
+          <div class="avatar">${p.initials}</div>
+          <div class="name">${p.name}</div>
+        `;
+        grid.appendChild(tile);
+      });
+      countEl.textContent = people.length;
+    }
+
+    // Timer e relógio
+    const start = Date.now();
+    const elapsedEl = document.getElementById('elapsed');
+    const clockEl = document.getElementById('clock');
+    function pad(n){ return n.toString().padStart(2,'0'); }
+    setInterval(()=>{
+      const d = new Date();
+      clockEl.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
+      const secs = Math.floor((Date.now()-start)/1000);
+      const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
+      elapsedEl.textContent = (h>0? pad(h)+':':'') + pad(m) + ':' + pad(s);
+    }, 500);
+
+    // Controles
+    let activeIndex = 0;
+    let micOn = true, camOn = true;
+
+    const btnMic = document.getElementById('btn-mic');
+    const btnCam = document.getElementById('btn-cam');
+
+    function updateButtons(){
+      btnMic.classList.toggle('is-on', micOn);
+      btnMic.classList.toggle('is-off', !micOn);
+      btnCam.classList.toggle('is-on', camOn);
+      btnCam.classList.toggle('is-off', !camOn);
+    }
+
+    function toggleMic(){ micOn = !micOn; updateButtons(); }
+    function toggleCam(){ camOn = !camOn; updateButtons(); }
+
+    btnMic.addEventListener('click', toggleMic);
+    btnCam.addEventListener('click', toggleCam);
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === ' '){ e.preventDefault(); toggleMic(); }
+      if(e.key === 'c' || e.key === 'C'){ toggleCam(); }
+      if(e.key === 'ArrowRight'){ activeIndex = (activeIndex+1)%people.length; renderTiles(); }
+      if(e.key === 'ArrowLeft'){ activeIndex = (activeIndex-1+people.length)%people.length; renderTiles(); }
+      if(e.key === 'f' || e.key === 'F'){ toggleFullscreen(); }
+    });
+
+    // Fullscreen
+    const fsBtn = document.getElementById('btn-fullscreen');
+    fsBtn.addEventListener('click', toggleFullscreen);
+    function toggleFullscreen(){
+      if(!document.fullscreenElement){ document.documentElement.requestFullscreen?.(); }
+      else { document.exitFullscreen?.(); }
+    }
+
+    renderTiles(); updateButtons();
+  </script>
+</body>
+</html>
