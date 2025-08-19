@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: fisiohub-postgres
+    environment:
+      POSTGRES_DB: fisiohub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - fisiohub-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: fisiohub-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - fisiohub-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fisiohub-backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fisiohub
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: seu-jwt-secret-aqui
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - fisiohub-network
+    command: npm run dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fisiohub-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - fisiohub-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  fisiohub-network:
+    driver: bridge

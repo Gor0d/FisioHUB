@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(copy .env.example .env)",
+      "Bash(cp:*)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(copy .env backend/.env)",
+      "Bash(npx prisma:*)",
+      "Bash(copy prisma\\schema-sqlite.prisma prisma\\schema.prisma)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout:*)",
+      "Bash(taskkill:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
