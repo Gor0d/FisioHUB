@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Logo } from '@/components/ui/logo';
 import { ThemeSelector, CompanyNameInput } from '@/components/ui/theme-selector';
+import { NavigationHeader } from '@/components/ui/navigation-header';
 import { LogOut, Users, Calendar, Activity, TrendingUp, Shield, UserPlus, Settings, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
@@ -13,9 +14,14 @@ import { api } from '@/lib/api';
 interface DashboardStats {
   totalPatients: number;
   totalAppointments: number;
-  totalBarthelScales: number;
-  totalMrcScales: number;
-  totalImprovements: number;
+  appointmentsToday: number;
+  appointmentsThisWeek: number;
+  appointmentsThisMonth: number;
+  revenue: {
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+  };
 }
 
 export default function DashboardPage() {
@@ -23,9 +29,14 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
     totalPatients: 0,
     totalAppointments: 0,
-    totalBarthelScales: 0,
-    totalMrcScales: 0,
-    totalImprovements: 0
+    appointmentsToday: 0,
+    appointmentsThisWeek: 0,
+    appointmentsThisMonth: 0,
+    revenue: {
+      today: 0,
+      thisWeek: 0,
+      thisMonth: 0
+    }
   });
   const [loading, setLoading] = useState(true);
 
@@ -33,28 +44,21 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       
-      // Buscar pacientes
-      const patientsResponse = await api.get('/api/patients');
-      const totalPatients = patientsResponse.data?.data?.pagination?.total || 0;
-      
-      // Buscar escalas Barthel
-      const barthelResponse = await api.get('/api/scales/barthel');
-      const totalBarthelScales = barthelResponse.data?.data?.pagination?.total || 0;
-      
-      // Buscar escalas MRC
-      const mrcResponse = await api.get('/api/scales/mrc');
-      const totalMrcScales = mrcResponse.data?.data?.pagination?.total || 0;
-      
-      // Buscar melhorias
-      const improvementsResponse = await api.get('/api/scales/improvements/dashboard');
-      const totalImprovements = improvementsResponse.data?.data?.summary?.totalImprovements || 0;
+      // Buscar dados do dashboard
+      const dashboardResponse = await api.get('/api/dashboard/stats');
+      const dashboardData = dashboardResponse.data?.data || {};
       
       setStats({
-        totalPatients,
-        totalAppointments: 0, // TODO: implementar quando appointments estiver funcional
-        totalBarthelScales,
-        totalMrcScales,
-        totalImprovements
+        totalPatients: dashboardData.totalPatients || 0,
+        totalAppointments: dashboardData.totalAppointments || 0,
+        appointmentsToday: dashboardData.appointmentsToday || 0,
+        appointmentsThisWeek: dashboardData.appointmentsThisWeek || 0,
+        appointmentsThisMonth: dashboardData.appointmentsThisMonth || 0,
+        revenue: {
+          today: dashboardData.revenue?.today || 0,
+          thisWeek: dashboardData.revenue?.thisWeek || 0,
+          thisMonth: dashboardData.revenue?.thisMonth || 0
+        }
       });
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
@@ -69,7 +73,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header específico do Dashboard */}
       <header className="border-b bg-card">
         <div className="flex h-16 items-center px-6 gap-4">
           <Logo size="sm" />
@@ -155,28 +159,13 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">
-                Nenhum agendamento para hoje
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Avaliações Realizadas
-              </CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
               <div className="text-2xl font-bold">
-                {loading ? '...' : stats.totalBarthelScales + stats.totalMrcScales}
+                {loading ? '...' : stats.appointmentsToday}
               </div>
               <p className="text-xs text-muted-foreground">
-                {(stats.totalBarthelScales + stats.totalMrcScales) === 0 ? 
-                  'Nenhuma avaliação realizada ainda' : 
-                  `${stats.totalBarthelScales} Barthel + ${stats.totalMrcScales} MRC`
+                {stats.appointmentsToday === 0 ? 
+                  'Nenhum agendamento para hoje' : 
+                  `${stats.appointmentsToday} agendamento${stats.appointmentsToday > 1 ? 's' : ''} hoje`
                 }
               </p>
             </CardContent>
@@ -185,18 +174,38 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Melhorias Identificadas
+                Total Agendamentos
+              </CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? '...' : stats.totalAppointments}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {stats.totalAppointments === 0 ? 
+                  'Nenhum agendamento realizado ainda' : 
+                  `${stats.totalAppointments} agendamento${stats.totalAppointments > 1 ? 's' : ''} total`
+                }
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Agendamentos do Mês
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {loading ? '...' : stats.totalImprovements}
+                {loading ? '...' : stats.appointmentsThisMonth}
               </div>
               <p className="text-xs text-muted-foreground">
-                {stats.totalImprovements === 0 ? 
-                  'Nenhuma melhoria registrada' : 
-                  `${stats.totalImprovements} melhoria${stats.totalImprovements > 1 ? 's' : ''} identificada${stats.totalImprovements > 1 ? 's' : ''}`
+                {stats.appointmentsThisMonth === 0 ? 
+                  'Nenhum agendamento este mês' : 
+                  `${stats.appointmentsThisMonth} agendamento${stats.appointmentsThisMonth > 1 ? 's' : ''} este mês`
                 }
               </p>
             </CardContent>
@@ -219,14 +228,14 @@ export default function DashboardPage() {
                   <span className="text-sm">{stats.totalPatients > 0 ? '✅ Pacientes cadastrados' : 'Cadastrar primeiro paciente'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-muted rounded-full"></div>
-                  <span className="text-sm text-muted-foreground">Criar primeiro agendamento</span>
+                  <div className={`w-2 h-2 rounded-full ${stats.totalAppointments > 0 ? 'bg-green-500' : 'bg-muted'}`}></div>
+                  <span className={`text-sm ${stats.totalAppointments > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    {stats.totalAppointments > 0 ? '✅ Agendamentos realizados' : 'Criar primeiro agendamento'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${(stats.totalBarthelScales + stats.totalMrcScales) > 0 ? 'bg-green-500' : 'bg-muted'}`}></div>
-                  <span className={`text-sm ${(stats.totalBarthelScales + stats.totalMrcScales) > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    {(stats.totalBarthelScales + stats.totalMrcScales) > 0 ? '✅ Avaliações realizadas' : 'Registrar primeira avaliação'}
-                  </span>
+                  <div className="w-2 h-2 bg-muted rounded-full"></div>
+                  <span className="text-sm text-muted-foreground">Registrar primeira evolução</span>
                 </div>
               </div>
               <Link href="/dashboard/pacientes">

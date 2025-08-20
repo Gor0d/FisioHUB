@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { NavigationHeader } from '@/components/ui/navigation-header'
 import { api } from '@/lib/api'
 import { Patient } from '@fisiohub/shared'
 
@@ -143,7 +144,9 @@ export default function PacientesPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-background">
+      <NavigationHeader title="Gerenciamento de Pacientes" />
+      <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Pacientes</h1>
         <p className="text-gray-600">Cadastre e gerencie seus pacientes</p>
@@ -338,6 +341,7 @@ export default function PacientesPage() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

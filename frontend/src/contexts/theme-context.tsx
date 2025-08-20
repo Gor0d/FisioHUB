@@ -26,6 +26,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Usar localStorage global para temas e empresa (não por usuário)
       const savedTheme = localStorage.getItem('fisiohub-theme');
       const savedCompanyName = localStorage.getItem('fisiohub-company-name');
       

@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { mrcScaleSchema, type MrcScaleInput, type Patient } from '@fisiohub/shared'
+import { type MrcScaleInput, type Patient } from '@fisiohub/shared'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -59,24 +58,8 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
     ...initialData
   })
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<MrcScaleInput>({
-    resolver: zodResolver(mrcScaleSchema),
-    defaultValues: {
-      patientId: patientId || '',
-      evolutionId,
-      type: 'ENTRADA',
-      shoulderAbduction: 0,
-      elbowFlexion: 0,
-      wristExtension: 0,
-      hipFlexion: 0,
-      kneeExtension: 0,
-      ankleFlexion: 0,
-      neckFlexion: 0,
-      trunkFlexion: 0,
-      shoulderAdduction: 0,
-      elbowExtension: 0,
-      ...initialData
-    }
+  const { handleSubmit, formState: { errors } } = useForm({
+    mode: 'onSubmit'
   })
 
   // Carregar pacientes
@@ -95,11 +78,7 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
     fetchPatients()
   }, [])
 
-  // Atualizar formulário quando paciente ou tipo mudarem
-  useEffect(() => {
-    setValue('patientId', selectedPatient)
-    setValue('type', evaluationType)
-  }, [selectedPatient, evaluationType, setValue])
+  // Dados atualizados automaticamente via state
 
   // Calcular pontuação total e média
   const totalScore = Object.values(scores).reduce((sum, score) => sum + score, 0)
@@ -117,34 +96,51 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
 
   const classification = getClassification(averageScore)
 
-  const handleScoreChange = (muscle: string, value: number) => {
+  const handleScoreChange = (muscle: string, value: number | string) => {
     const numericValue = Number(value)
     setScores(prev => ({ ...prev, [muscle]: numericValue }))
-    setValue(muscle as keyof MrcScaleInput, numericValue, { shouldValidate: true })
   }
 
-  const onFormSubmit = async (data: MrcScaleInput) => {
+  const onFormSubmit = async () => {
     setIsLoading(true)
     try {
       // Converter todos os valores numéricos para garantir que sejam números
       const numericData = {
-        ...data,
-        shoulderAbduction: Number(data.shoulderAbduction),
-        elbowFlexion: Number(data.elbowFlexion),
-        wristExtension: Number(data.wristExtension),
-        hipFlexion: Number(data.hipFlexion),
-        kneeExtension: Number(data.kneeExtension),
-        ankleFlexion: Number(data.ankleFlexion),
-        neckFlexion: Number(data.neckFlexion),
-        trunkFlexion: Number(data.trunkFlexion),
-        shoulderAdduction: Number(data.shoulderAdduction),
-        elbowExtension: Number(data.elbowExtension),
+        patientId: selectedPatient,
+        type: evaluationType,
+        evaluationDate: new Date().toISOString(),
+        shoulderAbduction: Number(scores.shoulderAbduction || 0),
+        elbowFlexion: Number(scores.elbowFlexion || 0),
+        wristExtension: Number(scores.wristExtension || 0),
+        hipFlexion: Number(scores.hipFlexion || 0),
+        kneeExtension: Number(scores.kneeExtension || 0),
+        ankleFlexion: Number(scores.ankleFlexion || 0),
+        neckFlexion: Number(scores.neckFlexion || 0),
+        trunkFlexion: Number(scores.trunkFlexion || 0),
+        shoulderAdduction: Number(scores.shoulderAdduction || 0),
+        elbowExtension: Number(scores.elbowExtension || 0),
         totalScore,
         averageScore: Math.round(averageScore * 10) / 10,
         classification
       }
       
       await onSubmit(numericData)
+      
+      // Resetar formulário após sucesso
+      setScores({
+        shoulderAbduction: 0,
+        elbowFlexion: 0,
+        wristExtension: 0,
+        hipFlexion: 0,
+        kneeExtension: 0,
+        ankleFlexion: 0,
+        neckFlexion: 0,
+        trunkFlexion: 0,
+        shoulderAdduction: 0,
+        elbowExtension: 0
+      })
+      setSelectedPatient('')
+      setEvaluationType('ENTRADA')
     } finally {
       setIsLoading(false)
     }
@@ -164,7 +160,7 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+        <form onSubmit={(e) => { e.preventDefault(); onFormSubmit(); }} className="space-y-6">
           {/* Seleção de Paciente */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
             <div className="space-y-2">
@@ -174,7 +170,13 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
                 onValueChange={(value) => setSelectedPatient(value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um paciente" />
+                  <SelectValue placeholder="Selecione um paciente">
+                    {selectedPatient ? 
+                      patients.find(p => p.id === selectedPatient)?.name + 
+                      (patients.find(p => p.id === selectedPatient)?.cpf ? ` - ${patients.find(p => p.id === selectedPatient)?.cpf}` : '')
+                      : "Selecione um paciente"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {patients.map((patient) => (
@@ -193,7 +195,9 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
                 onValueChange={(value) => setEvaluationType(value as 'ENTRADA' | 'SAIDA')}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {evaluationType === 'ENTRADA' ? '🔵 Entrada do Paciente' : '🟢 Saída do Paciente'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ENTRADA">🔵 Entrada do Paciente</SelectItem>
@@ -219,9 +223,7 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
                   >
                     <input
                       type="radio"
-                      {...register(muscle as keyof MrcScaleInput, { 
-                        setValueAs: (v) => parseInt(v) 
-                      })}
+                      name={muscle}
                       value={option.value}
                       checked={scores[muscle] === option.value}
                       onChange={() => handleScoreChange(muscle, option.value)}

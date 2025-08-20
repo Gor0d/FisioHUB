@@ -7,10 +7,12 @@ import { RegisterForm } from '@/components/forms/register-form';
 import { Logo } from '@/components/ui/logo';
 import { ThemeSelector, CompanyNameInput } from '@/components/ui/theme-selector';
 import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
 
 export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
   const { isAuthenticated, loading } = useAuth();
+  const { companyName } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -47,8 +49,30 @@ export default function LoginPage() {
           {/* Lado esquerdo - Informações */}
           <div className="space-y-8 text-center lg:text-left">
             <div>
-              <Logo size="lg" className="justify-center lg:justify-start mb-6" />
-              <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-4">
+              {/* Logo principal grande */}
+              <div className="flex justify-center lg:justify-start mb-6">
+                <img 
+                  src="/logo.png" 
+                  alt="FisioHub" 
+                  className="w-48 h-48 lg:w-64 lg:h-64 object-contain"
+                />
+              </div>
+              
+              {/* Nome da empresa personalizado */}
+              <div className="flex justify-center lg:justify-start mb-6">
+                <div className="text-center lg:text-left">
+                  <div className="text-2xl lg:text-3xl font-bold text-primary">
+                    FisioHub
+                  </div>
+                  {companyName && (
+                    <div className="text-lg text-muted-foreground">
+                      {companyName}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
                 Sistema de Gestão para Fisioterapeutas
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed max-w-lg mx-auto lg:mx-0">

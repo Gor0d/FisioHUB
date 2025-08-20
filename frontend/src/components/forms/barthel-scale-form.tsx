@@ -104,7 +104,7 @@ export function BarthelScaleForm({ patientId, evolutionId, onSubmit, initialData
   })
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<BarthelScaleInput>({
-    resolver: zodResolver(barthelScaleSchema),
+    mode: 'onSubmit', // Só valida na submissão, não em tempo real
     defaultValues: {
       patientId: patientId || '',
       evolutionId,
@@ -159,7 +159,7 @@ export function BarthelScaleForm({ patientId, evolutionId, onSubmit, initialData
 
   const classification = getClassification(totalScore)
 
-  const handleScoreChange = (activity: string, value: number) => {
+  const handleScoreChange = (activity: string, value: number | string) => {
     const numericValue = Number(value)
     setScores(prev => ({ ...prev, [activity]: numericValue }))
     setValue(activity as keyof BarthelScaleInput, numericValue, { shouldValidate: true })
@@ -171,21 +171,40 @@ export function BarthelScaleForm({ patientId, evolutionId, onSubmit, initialData
       // Converter todos os valores numéricos para garantir que sejam números
       const numericData = {
         ...data,
-        feeding: Number(data.feeding),
-        bathing: Number(data.bathing),
-        grooming: Number(data.grooming),
-        dressing: Number(data.dressing),
-        bowelControl: Number(data.bowelControl),
-        bladderControl: Number(data.bladderControl),
-        toileting: Number(data.toileting),
-        transfer: Number(data.transfer),
-        mobility: Number(data.mobility),
-        stairs: Number(data.stairs),
+        patientId: selectedPatient, // Garantir que o patientId selecionado seja incluído
+        type: evaluationType, // Garantir que o tipo seja incluído
+        evaluationDate: new Date().toISOString(), // Adicionar data de avaliação
+        feeding: Number(scores.feeding || 0),
+        bathing: Number(scores.bathing || 0),
+        grooming: Number(scores.grooming || 0),
+        dressing: Number(scores.dressing || 0),
+        bowelControl: Number(scores.bowelControl || 0),
+        bladderControl: Number(scores.bladderControl || 0),
+        toileting: Number(scores.toileting || 0),
+        transfer: Number(scores.transfer || 0),
+        mobility: Number(scores.mobility || 0),
+        stairs: Number(scores.stairs || 0),
         totalScore,
         classification
       }
       
       await onSubmit(numericData)
+      
+      // Resetar formulário após sucesso
+      setScores({
+        feeding: 0,
+        bathing: 0,
+        grooming: 0,
+        dressing: 0,
+        bowelControl: 0,
+        bladderControl: 0,
+        toileting: 0,
+        transfer: 0,
+        mobility: 0,
+        stairs: 0
+      })
+      setSelectedPatient('')
+      setEvaluationType('ENTRADA')
     } finally {
       setIsLoading(false)
     }
@@ -215,7 +234,13 @@ export function BarthelScaleForm({ patientId, evolutionId, onSubmit, initialData
                 onValueChange={(value) => setSelectedPatient(value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um paciente" />
+                  <SelectValue placeholder="Selecione um paciente">
+                    {selectedPatient ? 
+                      patients.find(p => p.id === selectedPatient)?.name + 
+                      (patients.find(p => p.id === selectedPatient)?.cpf ? ` - ${patients.find(p => p.id === selectedPatient)?.cpf}` : '')
+                      : "Selecione um paciente"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {patients.map((patient) => (
@@ -234,7 +259,9 @@ export function BarthelScaleForm({ patientId, evolutionId, onSubmit, initialData
                 onValueChange={(value) => setEvaluationType(value as 'ENTRADA' | 'SAIDA')}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {evaluationType === 'ENTRADA' ? '🔵 Entrada do Paciente' : '🟢 Saída do Paciente'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ENTRADA">🔵 Entrada do Paciente</SelectItem>

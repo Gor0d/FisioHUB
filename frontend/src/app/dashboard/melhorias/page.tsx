@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { NavigationHeader } from '@/components/ui/navigation-header'
 import { api } from '@/lib/api'
 import { Patient } from '@fisiohub/shared'
 import { TrendingUp, TrendingDown, Activity, Users } from 'lucide-react'
@@ -161,7 +162,9 @@ export default function MelhoriasPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-background">
+      <NavigationHeader title="Relatório de Melhorias" />
+      <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Relatório de Melhorias</h1>
         <p className="text-gray-600">Análise de melhorias dos pacientes baseada nas escalas de avaliação</p>
@@ -451,6 +454,7 @@ export default function MelhoriasPage() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

@@ -29,11 +29,11 @@ export const defaultTheme: ThemeConfig = {
   id: 'default',
   name: 'FisioHub Default',
   colors: {
-    primary: '221.2 83.2% 53.3%', // Blue
+    primary: '218 89% 51%', // Logo Blue (#4F75B8)
     primaryForeground: '210 40% 98%',
-    secondary: '210 40% 96%',
+    secondary: '218 20% 96%',
     secondaryForeground: '222.2 84% 4.9%',
-    accent: '210 40% 96%',
+    accent: '218 20% 96%',
     accentForeground: '222.2 84% 4.9%',
     background: '0 0% 100%',
     foreground: '222.2 84% 4.9%',
@@ -41,8 +41,8 @@ export const defaultTheme: ThemeConfig = {
     cardForeground: '222.2 84% 4.9%',
     border: '214.3 31.8% 91.4%',
     input: '214.3 31.8% 91.4%',
-    ring: '221.2 83.2% 53.3%',
-    muted: '210 40% 96%',
+    ring: '218 89% 51%',
+    muted: '218 20% 96%',
     mutedForeground: '215.4 16.3% 46.9%',
     destructive: '0 84.2% 60.2%',
     destructiveForeground: '210 40% 98%'

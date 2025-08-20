@@ -27,7 +27,11 @@
       "Bash(del /f \"node_modules\\.prisma\\client\\query_engine-windows.dll.node\")",
       "Bash(rm:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(npx eslint:*)",
+      "Bash(set API_PORT=3003)",
+      "Bash(set API_PORT=3005)",
+      "Bash(set API_PORT=3006)"
     ],
     "deny": [],
     "ask": []
