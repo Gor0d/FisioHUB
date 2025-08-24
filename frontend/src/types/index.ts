@@ -9,6 +9,22 @@ export interface Patient {
   birthDate?: string;
   address?: string;
   diagnosis?: string;
+  observations?: string;
+  isActive?: boolean;
+  // Campos hospitalares
+  attendanceNumber?: string;
+  bedNumber?: string;
+  room?: string;
+  sector?: string;
+  cid?: string;
+  admissionDate?: string;
+  dischargeDate?: string;
+  // Timestamps
+  createdAt?: string;
+  updatedAt?: string;
+  // Relations
+  userId?: string;
+  tenantId?: string;
 }
 
 export interface RegisterInput {
