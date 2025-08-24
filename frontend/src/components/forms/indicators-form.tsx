@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { indicatorSchema, type IndicatorInput } from '@fisiohub/shared'
+// import { indicatorSchema, type IndicatorInput } from '@fisiohub/shared'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -24,7 +24,7 @@ export function IndicatorsForm({ patientId, onSubmit, initialData }: IndicatorsF
   const [isLoading, setIsLoading] = useState(false)
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<IndicatorInput>({
-    resolver: zodResolver(indicatorSchema),
+    // resolver: zodResolver(indicatorSchema),
     defaultValues: {
       patientId,
       ...initialData

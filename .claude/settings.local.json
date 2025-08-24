@@ -39,7 +39,8 @@
       "Bash(chmod:*)",
       "Bash(cd:*)",
       "Bash(sed:*)",
-      "Bash(del Dockerfile)"
+      "Bash(del Dockerfile)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

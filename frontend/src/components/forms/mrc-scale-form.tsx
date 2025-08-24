@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { type MrcScaleInput, type Patient } from '@fisiohub/shared'
+// import { type MrcScaleInput, type Patient } from '@fisiohub/shared'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'

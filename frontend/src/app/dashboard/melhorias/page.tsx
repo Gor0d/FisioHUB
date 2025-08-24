@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { NavigationHeader } from '@/components/ui/navigation-header'
 import { api } from '@/lib/api'
-import { Patient } from '@fisiohub/shared'
+// import { Patient } from '@fisiohub/shared'
 import { TrendingUp, TrendingDown, Activity, Users } from 'lucide-react'
 
 interface DashboardData {

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { LoginInput, RegisterInput, ApiResponse, User } from '@fisiohub/shared';
+// import { LoginInput, RegisterInput, ApiResponse, User } from '@fisiohub/shared';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',

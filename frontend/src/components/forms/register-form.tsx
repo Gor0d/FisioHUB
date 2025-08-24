@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registerSchema, RegisterInput } from '@fisiohub/shared';
+// import { registerSchema, RegisterInput } from '@fisiohub/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +21,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const { register: registerUser } = useAuth();
 
   const form = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
+    // resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
       email: '',

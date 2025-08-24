@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { NavigationHeader } from '@/components/ui/navigation-header'
 import { api } from '@/lib/api'
-import { Patient, formatPatientDisplay } from '@fisiohub/shared'
-import { CID_CODES } from '@fisiohub/shared/src/data/cid-codes'
+// import { Patient, formatPatientDisplay } from '@fisiohub/shared'
+// import { CID_CODES } from '@fisiohub/shared/src/data/cid-codes'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface PatientFormData {

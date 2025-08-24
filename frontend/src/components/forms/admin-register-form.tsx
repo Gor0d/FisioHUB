@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-// import { registerSchema, RegisterInput } from '@fisiohub/shared';
-// import { UserRole } from '@fisiohub/shared';
+// // import { registerSchema, RegisterInput } from '@fisiohub/shared';
+// // import { UserRole } from '@fisiohub/shared';
 
 // Tipos temporários
 type RegisterInput = {
@@ -32,7 +32,7 @@ export function AdminRegisterForm({ onSwitchToLogin }: AdminRegisterFormProps) {
   const { register: registerUser } = useAuth();
 
   const form = useForm<RegisterInput>({
-    // resolver: zodResolver(registerSchema), // Disabled temporarily
+    // // resolver: zodResolver(registerSchema), // Disabled temporarily
     defaultValues: {
       name: '',
       email: '',
