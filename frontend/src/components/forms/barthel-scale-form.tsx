@@ -89,7 +89,7 @@ export function BarthelScaleForm({ patientId, evolutionId, onSubmit, initialData
   const [patients, setPatients] = useState<Patient[]>([])
   const [selectedPatient, setSelectedPatient] = useState(patientId || '')
   const [evaluationType, setEvaluationType] = useState<'ENTRADA' | 'SAIDA'>('ENTRADA')
-  const [scores, setScores] = useState<Record<string, number>>({
+  const [scores, setScores] = useState({
     feeding: 0,
     bathing: 0,
     grooming: 0,
@@ -99,8 +99,7 @@ export function BarthelScaleForm({ patientId, evolutionId, onSubmit, initialData
     toileting: 0,
     transfer: 0,
     mobility: 0,
-    stairs: 0,
-    ...initialData
+    stairs: 0
   })
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<BarthelScaleInput>({
