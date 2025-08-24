@@ -7,15 +7,19 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { NavigationHeader } from '@/components/ui/navigation-header'
 import { api } from '@/lib/api'
-import { Patient } from '@fisiohub/shared'
+import { Patient, formatPatientDisplay } from '@fisiohub/shared'
+import { CID_CODES } from '@fisiohub/shared/src/data/cid-codes'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface PatientFormData {
   name: string
   email: string
   phone: string
-  cpf: string
+  attendanceNumber: string
+  bedNumber: string
   birthDate: string
   address: string
+  cid: string
   diagnosis: string
   observations: string
 }
@@ -24,9 +28,11 @@ const initialFormData: PatientFormData = {
   name: '',
   email: '',
   phone: '',
-  cpf: '',
+  attendanceNumber: '',
+  bedNumber: '',
   birthDate: '',
   address: '',
+  cid: '',
   diagnosis: '',
   observations: ''
 }
@@ -71,9 +77,11 @@ export default function PacientesPage() {
           ...formData,
           email: formData.email || undefined,
           phone: formData.phone || undefined,
-          cpf: formData.cpf || undefined,
+          attendanceNumber: formData.attendanceNumber || undefined,
+          bedNumber: formData.bedNumber || undefined,
           birthDate: formData.birthDate || undefined,
           address: formData.address || undefined,
+          cid: formData.cid || undefined,
           diagnosis: formData.diagnosis || undefined,
           observations: formData.observations || undefined,
         }
@@ -107,9 +115,11 @@ export default function PacientesPage() {
       name: patient.name,
       email: patient.email || '',
       phone: patient.phone || '',
-      cpf: patient.cpf || '',
+      attendanceNumber: patient.attendanceNumber || '',
+      bedNumber: patient.bedNumber || '',
       birthDate: patient.birthDate ? new Date(patient.birthDate).toISOString().split('T')[0] : '',
       address: patient.address || '',
+      cid: patient.cid || '',
       diagnosis: patient.diagnosis || '',
       observations: patient.observations || ''
     })
@@ -164,7 +174,7 @@ export default function PacientesPage() {
           <div className="flex gap-4 items-center">
             <div className="flex-1">
               <Input
-                placeholder="Pesquisar pacientes por nome, email ou CPF..."
+                placeholder="Pesquisar pacientes por nome, email ou número de atendimento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -185,15 +195,23 @@ export default function PacientesPage() {
                   <div key={patient.id} className="p-4 hover:bg-gray-50">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
-                        <h3 className="font-medium text-gray-900">{patient.name}</h3>
+                        <h3 className="font-medium text-gray-900">
+                          {formatPatientDisplay(patient.name, patient.attendanceNumber)}
+                        </h3>
                         {patient.email && (
                           <p className="text-sm text-gray-600">📧 {patient.email}</p>
                         )}
                         {patient.phone && (
                           <p className="text-sm text-gray-600">📱 {patient.phone}</p>
                         )}
-                        {patient.cpf && (
-                          <p className="text-sm text-gray-600">🆔 {patient.cpf}</p>
+                        {patient.attendanceNumber && (
+                          <p className="text-sm text-gray-600">🏷️ Atendimento: {patient.attendanceNumber}</p>
+                        )}
+                        {patient.bedNumber && (
+                          <p className="text-sm text-gray-600">🏥 Leito: {patient.bedNumber}</p>
+                        )}
+                        {patient.cid && (
+                          <p className="text-sm text-gray-600">📋 CID: {patient.cid}</p>
                         )}
                         {patient.diagnosis && (
                           <p className="text-sm text-gray-600">🩺 {patient.diagnosis}</p>
@@ -270,13 +288,25 @@ export default function PacientesPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="cpf">CPF</Label>
+                  <Label htmlFor="attendanceNumber">Número de Atendimento *</Label>
                   <Input
-                    id="cpf"
-                    name="cpf"
-                    value={formData.cpf}
+                    id="attendanceNumber"
+                    name="attendanceNumber"
+                    value={formData.attendanceNumber}
                     onChange={handleInputChange}
-                    placeholder="000.000.000-00"
+                    placeholder="Ex: 2024001"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="bedNumber">Leito</Label>
+                  <Input
+                    id="bedNumber"
+                    name="bedNumber"
+                    value={formData.bedNumber}
+                    onChange={handleInputChange}
+                    placeholder="Ex: 101A, UTI-05"
                   />
                 </div>
 
@@ -289,6 +319,22 @@ export default function PacientesPage() {
                     value={formData.birthDate}
                     onChange={handleInputChange}
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="cid">CID *</Label>
+                  <Select value={formData.cid} onValueChange={(value) => setFormData(prev => ({ ...prev, cid: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o CID" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CID_CODES.map((cid) => (
+                        <SelectItem key={cid.code} value={cid.code}>
+                          {cid.code} - {cid.description}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>

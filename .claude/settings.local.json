@@ -31,7 +31,12 @@
       "Bash(npx eslint:*)",
       "Bash(set API_PORT=3003)",
       "Bash(set API_PORT=3005)",
-      "Bash(set API_PORT=3006)"
+      "Bash(set API_PORT=3006)",
+      "Bash(npx typescript:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(del prismadev.db)",
+      "Bash(touch:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

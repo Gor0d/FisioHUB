@@ -1,11 +1,14 @@
-# 🏥 FisioHub - Sistema de Gestão para Fisioterapeutas
+# 🏥 FisioHUB - Plataforma SaaS para Gestão de Indicadores Clínicos
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://docker.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white)](https://postgresql.org/)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
 
-Sistema SaaS completo para gestão de clínicas de fisioterapia com **interface personalizável** e **sistema multi-usuário**.
+**Plataforma SaaS completa e robusta** para gestão inteligente de indicadores clínicos com **arquitetura multitenancy**, **testes automatizados** e **deploy containerizado**.
 
 <p align="center">
   <img src="docs/3.png" alt="FisioHub Logo" width="250"/>
@@ -14,22 +17,39 @@ Sistema SaaS completo para gestão de clínicas de fisioterapia com **interface 
 
 ## ✨ Características Principais
 
-### 🎨 **Sistema White-Label**
-- **Temas personalizáveis**: 3 temas prontos (Default, Medical, Corporate)
-- **Branding flexível**: Nome da empresa + logo FisioHub
-- **Cores adaptáveis**: Interface que se adapta à identidade visual do cliente
+### 🏢 **Arquitetura SaaS Multitenancy**
+- **Schema-per-tenant**: Isolamento completo de dados por cliente
+- **Subdomínios personalizados**: `cliente.fisiohub.com`
+- **Planos de assinatura**: Básico, Profissional, Empresarial
+- **Escalabilidade automática**: Suporta milhares de tenants
+- **Billing e pagamentos**: Sistema de cobrança integrado
 
-### 👥 **Multi-Usuário**
-- **Administrador**: Controle total do sistema
-- **Fisioterapeuta**: Gestão de pacientes e tratamentos
-- **Recepcionista**: Agendamentos e cadastros
+### 🔐 **Autenticação Multi-Tenant**
+- **JWT com contexto de tenant**: Tokens seguros e específicos
+- **5 níveis de acesso**: Super Admin → Tenant Admin → Hospital Admin → Service Manager → Collaborator
+- **Single Sign-On (SSO)**: Autenticação unificada
+- **Sistema de convites**: Onboarding automático de colaboradores
+
+### 🚀 **Portal Público de Cadastro**
+- **Landing page responsiva**: Com pricing e features
+- **Registro multi-step**: Validação em tempo real
+- **Onboarding guiado**: Interface para configuração inicial
+- **Trial de 14 dias**: Teste gratuito automático
+
+### 🛠️ **DevOps e Qualidade**
+- **CI/CD automatizado**: GitHub Actions com deploy automático
+- **Testes abrangentes**: Backend (Jest) + Frontend (Testing Library)
+- **Containerização**: Docker multi-stage com health checks
+- **Monitoramento**: Health checks e métricas de performance
+- **Backup automático**: Estratégias de recuperação de dados
 
 ### 🏥 **Funcionalidades Clínicas**
-- ✅ Gestão completa de pacientes
-- ✅ Sistema de agendamentos inteligente
-- ✅ Registro detalhado de evoluções
-- ✅ Dashboard com métricas em tempo real
-- ✅ Relatórios gerenciais
+- ✅ Gestão completa de indicadores clínicos
+- ✅ Dashboard com BI avançado
+- ✅ Multi-hospitais e serviços
+- ✅ Relatórios em tempo real
+- ✅ Integração com APIs externas
+- ✅ Conformidade LGPD
 
 ## 🚀 Stack Tecnológica
 

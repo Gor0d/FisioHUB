@@ -107,6 +107,7 @@ export const barthelScaleSchema = z.object({
   type: z.enum(['ENTRADA', 'SAIDA']).default('ENTRADA'),
   patientId: z.string().min(1, 'Paciente é obrigatório'),
   evolutionId: z.string().optional(),
+  evaluationDate: z.string().optional(),
 });
 
 export const mrcScaleSchema = z.object({
@@ -127,6 +128,7 @@ export const mrcScaleSchema = z.object({
   type: z.enum(['ENTRADA', 'SAIDA']).default('ENTRADA'),
   patientId: z.string().min(1, 'Paciente é obrigatório'),
   evolutionId: z.string().optional(),
+  evaluationDate: z.string().optional(),
 });
 
 export const querySchema = z.object({

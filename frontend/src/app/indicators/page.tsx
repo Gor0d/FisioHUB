@@ -11,6 +11,7 @@ import { MrcScaleForm } from '@/components/forms/mrc-scale-form'
 import { NavigationHeader } from '@/components/ui/navigation-header'
 import { Logo } from '@/components/ui/logo'
 import { ThemeSelector, CompanyNameInput } from '@/components/ui/theme-selector'
+import { DarkModeToggle } from '@/components/ui/dark-mode-toggle'
 import { LogOut, Shield } from 'lucide-react'
 import Link from 'next/link'
 // import { useToast } from '@/hooks/use-toast'
@@ -38,6 +39,11 @@ export default function IndicatorsPage() {
       if (response.data.success) {
         const indicator = response.data.data
         showSuccess(`✅ Indicadores salvos com sucesso!\n\n📊 Registro ID: ${indicator.id}\n📅 Data: ${new Date(indicator.date).toLocaleDateString('pt-BR')}\n💾 Dados foram salvos no banco de dados`)
+        
+        // Invalidar cache do dashboard para atualizar contadores
+        await api.get('/api/dashboard/stats', { 
+          headers: { 'Cache-Control': 'no-cache' } 
+        }).catch(() => {}) // Ignorar erro se falhar
       } else {
         throw new Error(response.data.message || 'Erro ao salvar indicadores')
       }
@@ -60,6 +66,11 @@ export default function IndicatorsPage() {
         const typeText = scale.type === 'ENTRADA' ? 'Entrada' : 'Saída'
         
         showSuccess(`✅ Escala de Barthel salva com sucesso!\n\n👤 Paciente: ${patientName}\n🎯 Tipo: ${typeText}\n📊 Pontuação: ${scoreText}\n📅 Data: ${new Date(scale.evaluationDate).toLocaleDateString('pt-BR')}\n💾 Avaliação salva no banco de dados`)
+        
+        // Invalidar cache do dashboard para atualizar contadores
+        await api.get('/api/dashboard/stats', { 
+          headers: { 'Cache-Control': 'no-cache' } 
+        }).catch(() => {}) // Ignorar erro se falhar
       } else {
         throw new Error(response.data.message || 'Erro ao salvar Escala de Barthel')
       }
@@ -82,6 +93,11 @@ export default function IndicatorsPage() {
         const typeText = scale.type === 'ENTRADA' ? 'Entrada' : 'Saída'
         
         showSuccess(`✅ Escala MRC salva com sucesso!\n\n👤 Paciente: ${patientName}\n🎯 Tipo: ${typeText}\n📊 Pontuação: ${scoreText}\n📅 Data: ${new Date(scale.evaluationDate).toLocaleDateString('pt-BR')}\n💾 Avaliação salva no banco de dados`)
+        
+        // Invalidar cache do dashboard para atualizar contadores
+        await api.get('/api/dashboard/stats', { 
+          headers: { 'Cache-Control': 'no-cache' } 
+        }).catch(() => {}) // Ignorar erro se falhar
       } else {
         throw new Error(response.data.message || 'Erro ao salvar Escala MRC')
       }
@@ -103,7 +119,7 @@ export default function IndicatorsPage() {
       <div className="container mx-auto py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Indicadores Clínicos</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Sistema de registro de indicadores quantitativos para substituir planilhas manuais
           </p>
         </div>
@@ -117,7 +133,7 @@ export default function IndicatorsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-gray-600">registros hoje</p>
+            <p className="text-xs text-muted-foreground">registros hoje</p>
           </CardContent>
         </Card>
 
@@ -128,7 +144,7 @@ export default function IndicatorsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">✅</div>
-            <p className="text-xs text-gray-600">Funcional com pacientes</p>
+            <p className="text-xs text-muted-foreground">Funcional com pacientes</p>
           </CardContent>
         </Card>
 
@@ -139,7 +155,7 @@ export default function IndicatorsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">✅</div>
-            <p className="text-xs text-gray-600">Funcional com pacientes</p>
+            <p className="text-xs text-muted-foreground">Funcional com pacientes</p>
           </CardContent>
         </Card>
       </div>
@@ -162,8 +178,8 @@ export default function IndicatorsPage() {
         <TabsContent value="barthel" className="mt-6">
           <div className="flex justify-center">
             <div className="w-full max-w-4xl">
-              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800">
+              <div className="mb-4 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-sm text-green-800 dark:text-green-200">
                   ✅ <strong>Novo:</strong> Agora você pode selecionar pacientes reais e indicar se é entrada ou saída para calcular melhorias!
                 </p>
               </div>
@@ -177,8 +193,8 @@ export default function IndicatorsPage() {
         <TabsContent value="mrc" className="mt-6">
           <div className="flex justify-center">
             <div className="w-full max-w-4xl">
-              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800">
+              <div className="mb-4 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-sm text-green-800 dark:text-green-200">
                   ✅ <strong>Novo:</strong> Agora você pode selecionar pacientes reais e indicar se é entrada ou saída para calcular melhorias!
                 </p>
               </div>

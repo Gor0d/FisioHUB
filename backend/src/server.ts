@@ -13,6 +13,10 @@ import indicatorsRoutes from '@/routes/indicators';
 import barthelScalesRoutes from '@/routes/barthelScales';
 import mrcScalesRoutes from '@/routes/mrcScales';
 import { scalesRouter } from '@/routes/scales';
+import servicesRoutes from '@/routes/services';
+import { tenantAuthRoutes } from '@/routes/tenantAuth';
+// import clientsRoutes from '@/routes/clients';
+// import indicatorTemplatesRoutes from '@/routes/indicatorTemplates';
 
 dotenv.config();
 
@@ -48,6 +52,10 @@ app.use('/api/indicators', indicatorsRoutes);
 app.use('/api/barthel-scales', barthelScalesRoutes);
 app.use('/api/mrc-scales', mrcScalesRoutes);
 app.use('/api/scales', scalesRouter);
+app.use('/api/services', servicesRoutes);
+app.use('/api', tenantAuthRoutes);
+// app.use('/api/clients', clientsRoutes);
+// app.use('/api/indicator-templates', indicatorTemplatesRoutes);
 
 app.use(errorHandler);
 

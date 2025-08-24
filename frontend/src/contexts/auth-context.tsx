@@ -83,6 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('fisiohub-token');
       localStorage.removeItem('fisiohub-user');
+      // Redirecionar para a página de login
+      window.location.href = '/login';
     }
     setUser(null);
   };

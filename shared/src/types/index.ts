@@ -21,9 +21,11 @@ export interface Patient {
   name: string;
   email?: string;
   phone?: string;
-  cpf?: string;
+  attendanceNumber?: string;
+  bedNumber?: string;
   birthDate?: Date;
   address?: string;
+  cid?: string;
   diagnosis?: string;
   observations?: string;
   isActive: boolean;
@@ -228,13 +230,9 @@ export interface MrcScale {
 
 export interface DashboardStats {
   totalPatients: number;
-  totalAppointments: number;
-  appointmentsToday: number;
-  appointmentsThisWeek: number;
-  appointmentsThisMonth: number;
-  revenue: {
-    today: number;
-    thisWeek: number;
-    thisMonth: number;
-  };
+  // Dados de indicadores e escalas para hospital
+  indicatorsToday: number;
+  barthelScalesToday: number;
+  mrcScalesToday: number;
+  totalActivitiesToday: number;
 }

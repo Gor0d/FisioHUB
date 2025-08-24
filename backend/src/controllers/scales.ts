@@ -46,7 +46,8 @@ export const createBarthelScale = async (req: AuthRequest, res: Response): Promi
         select: {
           id: true,
           name: true,
-          cpf: true
+          attendanceNumber: true,
+          bedNumber: true
         }
       }
     }
@@ -106,7 +107,8 @@ export const createMrcScale = async (req: AuthRequest, res: Response): Promise<R
         select: {
           id: true,
           name: true,
-          cpf: true
+          attendanceNumber: true,
+          bedNumber: true
         }
       }
     }

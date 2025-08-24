@@ -1,8 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Check, 
+  ArrowRight, 
+  Star, 
+  Users, 
+  Hospital, 
+  BarChart3, 
+  Shield, 
+  Globe, 
+  Zap,
+  Heart,
+  Brain,
+  Stethoscope
+} from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();

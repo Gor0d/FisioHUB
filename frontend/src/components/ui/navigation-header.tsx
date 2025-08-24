@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useTheme } from '@/contexts/theme-context'
 import { Button } from '@/components/ui/button'
+import { DarkModeToggle } from '@/components/ui/dark-mode-toggle'
 import { Home, LogOut, Settings, Activity } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -58,6 +59,8 @@ export function NavigationHeader({ title, showBackButton = true }: NavigationHea
               Indicadores
             </Button>
           </Link>
+
+          <DarkModeToggle />
 
           <Button variant="ghost" size="icon" onClick={handleLogout}>
             <LogOut className="h-4 w-4" />

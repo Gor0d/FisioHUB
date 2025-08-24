@@ -1,13 +1,3 @@
-export const formatCpf = (cpf: string): string => {
-  const cleaned = cpf.replace(/\D/g, '');
-  const match = cleaned.match(/^(\d{3})(\d{3})(\d{3})(\d{2})$/);
-  
-  if (match) {
-    return `${match[1]}.${match[2]}.${match[3]}-${match[4]}`;
-  }
-  
-  return cpf;
-};
 
 export const formatPhone = (phone: string): string => {
   const cleaned = phone.replace(/\D/g, '');
@@ -58,26 +48,23 @@ export const calculateAge = (birthDate: Date): number => {
   return age;
 };
 
-export const validateCpf = (cpf: string): boolean => {
-  const cleaned = cpf.replace(/\D/g, '');
+
+export const getPatientInitials = (name: string): string => {
+  if (!name) return '';
   
-  if (cleaned.length !== 11 || /^(.)\1{10}$/.test(cleaned)) {
-    return false;
-  }
+  const words = name.trim().split(' ').filter(word => word.length > 0);
   
-  let sum = 0;
-  for (let i = 0; i < 9; i++) {
-    sum += parseInt(cleaned[i]) * (10 - i);
-  }
-  let digit1 = 11 - (sum % 11);
-  if (digit1 > 9) digit1 = 0;
+  if (words.length === 0) return '';
+  if (words.length === 1) return words[0].charAt(0).toUpperCase();
   
-  sum = 0;
-  for (let i = 0; i < 10; i++) {
-    sum += parseInt(cleaned[i]) * (11 - i);
-  }
-  let digit2 = 11 - (sum % 11);
-  if (digit2 > 9) digit2 = 0;
+  const firstInitial = words[0].charAt(0).toUpperCase();
+  const lastInitial = words[words.length - 1].charAt(0).toUpperCase();
   
-  return digit1 === parseInt(cleaned[9]) && digit2 === parseInt(cleaned[10]);
+  return `${firstInitial}.${lastInitial}.`;
+};
+
+export const formatPatientDisplay = (name: string, attendanceNumber?: string): string => {
+  const initials = getPatientInitials(name);
+  if (!attendanceNumber) return initials;
+  return `${initials} - ${attendanceNumber}`;
 };

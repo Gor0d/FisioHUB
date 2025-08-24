@@ -91,6 +91,11 @@ export const createIndicator = async (req: AuthRequest, res: Response): Promise<
       }
     });
 
+    // Definir headers para invalidar cache do dashboard
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     return res.status(201).json({
       success: true,
       message: 'Indicador criado com sucesso',

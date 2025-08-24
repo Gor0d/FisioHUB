@@ -64,7 +64,11 @@ export const createBarthelScale = async (req: AuthenticatedRequest, res: Respons
     const userId = req.userId!;
     const data = req.body;
     
+    console.log('📥 Dados recebidos para BarthelScale:', JSON.stringify(data, null, 2));
+    console.log('👤 UserID:', userId);
+    
     const validatedData = barthelScaleSchema.parse(data);
+    console.log('✅ Dados validados:', JSON.stringify(validatedData, null, 2));
 
     const totalScore = 
       (validatedData.feeding || 0) +
@@ -87,14 +91,41 @@ export const createBarthelScale = async (req: AuthenticatedRequest, res: Respons
     };
 
     const classification = getClassification(totalScore);
+    console.log('🎯 Pontuação calculada:', totalScore, 'Classificação:', classification);
+
+    // Preparar dados para criação
+    const createData: any = {
+      feeding: validatedData.feeding,
+      bathing: validatedData.bathing,
+      grooming: validatedData.grooming,
+      dressing: validatedData.dressing,
+      bowelControl: validatedData.bowelControl,
+      bladderControl: validatedData.bladderControl,
+      toileting: validatedData.toileting,
+      transfer: validatedData.transfer,
+      mobility: validatedData.mobility,
+      stairs: validatedData.stairs,
+      type: validatedData.type,
+      totalScore,
+      classification,
+      userId,
+      patientId: validatedData.patientId,
+    };
+
+    if (validatedData.evolutionId) {
+      createData.evolutionId = validatedData.evolutionId;
+    }
+
+    if (validatedData.evaluationDate) {
+      createData.evaluationDate = new Date(validatedData.evaluationDate);
+    } else {
+      createData.evaluationDate = new Date();
+    }
+
+    console.log('💾 Dados para criação no banco:', JSON.stringify(createData, null, 2));
 
     const scale = await prisma.barthelScale.create({
-      data: {
-        ...validatedData,
-        totalScore,
-        classification,
-        userId,
-      },
+      data: createData,
       include: {
         user: {
           select: { id: true, name: true, email: true }
@@ -105,15 +136,19 @@ export const createBarthelScale = async (req: AuthenticatedRequest, res: Respons
       }
     });
 
+    console.log('🎉 BarthelScale criado com sucesso:', scale.id);
+
     return res.status(201).json({
       success: true,
       message: 'Escala de Barthel criada com sucesso',
       data: scale
     });
   } catch (error: any) {
-    console.error('Erro ao criar escala de Barthel:', error);
+    console.error('❌ Erro detalhado ao criar escala de Barthel:', error);
+    console.error('❌ Stack trace:', error.stack);
     
     if (error.name === 'ZodError') {
+      console.error('❌ Erro de validação Zod:', error.errors);
       return res.status(400).json({
         success: false,
         message: 'Dados inválidos',
@@ -121,9 +156,16 @@ export const createBarthelScale = async (req: AuthenticatedRequest, res: Respons
       });
     }
 
+    if (error.code === 'P2002') {
+      return res.status(400).json({
+        success: false,
+        message: 'Registro duplicado'
+      });
+    }
+
     return res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor: ' + error.message
     });
   }
 };

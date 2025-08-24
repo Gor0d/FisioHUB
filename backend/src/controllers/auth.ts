@@ -7,7 +7,9 @@ import { loginSchema, registerSchema } from '@fisiohub/shared';
 export const register = async (req: Request, res: Response) => {
   const validatedData = registerSchema.parse(req.body);
   
-  const existingUser = await prisma.user.findUnique({
+  // No novo schema enterprise, precisaríamos do hospitalId para verificar email único
+  // Por enquanto, vamos verificar se existe algum usuário com esse email
+  const existingUser = await prisma.user.findFirst({
     where: { email: validatedData.email }
   });
   
@@ -16,7 +18,7 @@ export const register = async (req: Request, res: Response) => {
   }
   
   if (validatedData.crf) {
-    const existingCrf = await prisma.user.findUnique({
+    const existingCrf = await prisma.user.findFirst({
       where: { crf: validatedData.crf }
     });
     
@@ -39,6 +41,8 @@ export const register = async (req: Request, res: Response) => {
       crf: true,
       phone: true,
       specialty: true,
+      role: true,
+      active: true,
       createdAt: true,
       updatedAt: true,
     }
@@ -63,7 +67,9 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   const validatedData = loginSchema.parse(req.body);
   
-  const user = await prisma.user.findUnique({
+  // No novo schema enterprise, email não é mais único globalmente
+  // Precisamos buscar o primeiro usuário com esse email
+  const user = await prisma.user.findFirst({
     where: { email: validatedData.email }
   });
   
@@ -94,6 +100,8 @@ export const login = async (req: Request, res: Response) => {
         crf: user.crf,
         phone: user.phone,
         specialty: user.specialty,
+        role: user.role,
+        active: user.active,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -119,6 +127,8 @@ export const me = async (req: Request, res: Response) => {
       crf: true,
       phone: true,
       specialty: true,
+      role: true,
+      active: true,
       createdAt: true,
       updatedAt: true,
     }

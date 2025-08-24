@@ -27,25 +27,25 @@
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    --background: 217 18% 17%;
+    --foreground: 213 31% 91%;
+    --card: 218 11% 24%;
+    --card-foreground: 213 31% 91%;
+    --popover: 218 11% 24%;
+    --popover-foreground: 213 31% 91%;
+    --primary: 218 89% 51%;
+    --primary-foreground: 213 31% 91%;
+    --secondary: 218 11% 30%;
+    --secondary-foreground: 213 31% 91%;
+    --muted: 217 18% 17%;
+    --muted-foreground: 215.4 13.8% 71%;
+    --accent: 218 11% 24%;
+    --accent-foreground: 213 31% 91%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 213 31% 91%;
+    --border: 218 11% 30%;
+    --input: 218 11% 24%;
+    --ring: 218 89% 51%;
   }
 }
  
@@ -55,5 +55,162 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
   }
+  
+  /* Dark mode com cores personalizadas */
+  .dark body {
+    background-color: #222831 !important;
+    color: hsl(213 31% 91%) !important;
+  }
+  
+  .dark .bg-background {
+    background-color: #222831 !important;
+  }
+  
+  .dark .bg-card {
+    background-color: #393E46 !important;
+    border-color: #4A5058 !important;
+  }
+  
+  .dark .text-foreground {
+    color: hsl(213 31% 91%) !important;
+  }
+  
+  .dark .text-muted-foreground {
+    color: hsl(215.4 13.8% 71%) !important;
+  }
+  
+  .dark .border-border {
+    border-color: #4A5058 !important;
+  }
+  
+  
+  .dark .text-primary-foreground {
+    color: hsl(213 31% 91%) !important;
+  }
+  
+  .dark header {
+    background-color: #393E46 !important;
+    border-color: #4A5058 !important;
+  }
+  
+  .dark .bg-accent {
+    background-color: #4A5058 !important;
+  }
+  
+  .dark .bg-secondary {
+    background-color: #4A5058 !important;
+  }
+  
+  /* Títulos e textos importantes sempre brancos */
+  .dark h1,
+  .dark h2, 
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6 {
+    color: hsl(213 31% 91%) !important;
+  }
+  
+  .dark [class*="CardTitle"],
+  .dark [class*="card-title"],
+  .dark .font-bold,
+  .dark .font-semibold,
+  .dark .font-medium {
+    color: hsl(213 31% 91%) !important;
+  }
+  
+  /* Específicos para títulos dos cards */
+  .dark .text-3xl,
+  .dark .text-2xl,
+  .dark .text-xl,
+  .dark .text-lg {
+    color: hsl(213 31% 91%) !important;
+  }
+  
+  /* Títulos específicos das páginas */
+  .dark .tracking-tight {
+    color: hsl(213 31% 91%) !important;
+  }
+  
+  /* Apenas botões outline neutros ficam brancos */
+  .dark .variant-outline:not(.bg-primary):not(.bg-green-600) {
+    background-color: hsl(0 0% 100%) !important;
+    color: hsl(222.2 84% 4.9%) !important;
+    border-color: hsl(214.3 31.8% 91.4%) !important;
+  }
+  
+  /* Transições suaves para elementos que mudam de cor */
+  .transition-colors {
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  }
+}
+
+/* Evitar flash de conteúdo incorreto */
+html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
+/* Animações customizadas para transições suaves */
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeInSlideLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+  }
+}
+
+@keyframes progressFill {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* Aplicar animações aos elementos de transição */
+.animate-fade-slide {
+  animation: fadeInSlideUp 0.5s ease-out forwards;
+}
+
+.animate-slide-left {
+  animation: fadeInSlideLeft 0.6s ease-out forwards;
+}
+
+.animate-progress-fill {
+  animation: progressFill 0.8s ease-out forwards;
+  transform-origin: left center;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s infinite;
 }

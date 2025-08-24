@@ -7,8 +7,12 @@ import { AuthProvider } from '@/contexts/auth-context'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'FisioHub - Sistema de Gestão para Fisioterapeutas',
-  description: 'Plataforma completa para gestão de clínicas de fisioterapia',
+  title: 'FisioHUB - Plataforma SaaS para Gestão de Indicadores Clínicos',
+  description: 'Plataforma SaaS completa para gestão inteligente de indicadores clínicos com arquitetura multitenancy e testes automatizados',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
 }
 
 export default function RootLayout({
@@ -17,7 +21,29 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem('fisiohub-ui-theme');
+                if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                } else if (theme === 'light') {
+                  document.documentElement.classList.remove('dark');
+                } else {
+                  // Sistema padrão
+                  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  if (systemDark) {
+                    document.documentElement.classList.add('dark');
+                  }
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <ThemeProvider>
           <AuthProvider>
