@@ -20,7 +20,6 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@fisiohub/shared": "file:../shared",
     "@prisma/client": "^6.14.0",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
