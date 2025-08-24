@@ -2,10 +2,10 @@ import { Request, Response } from 'express';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, comparePassword, generateToken } from '@/utils/auth';
 import { createError } from '@/middleware/errorHandler';
-import { loginSchema, registerSchema } from '@fisiohub/shared';
+// import { loginSchema, registerSchema } from '@fisiohub/shared';
 
 export const register = async (req: Request, res: Response) => {
-  const validatedData = registerSchema.parse(req.body);
+  const validatedData = req.body; // TODO: Add proper validation
   
   // No novo schema enterprise, precisaríamos do hospitalId para verificar email único
   // Por enquanto, vamos verificar se existe algum usuário com esse email
