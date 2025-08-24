@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-// import { User, LoginInput, RegisterInput } from '@fisiohub/shared';
 import { authApi } from '@/lib/api';
+import type { User, LoginInput, RegisterInput } from '@/types';
 
 interface AuthContextType {
   user: User | null;

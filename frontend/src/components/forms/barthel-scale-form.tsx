@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-// import { barthelScaleSchema, type BarthelScaleInput, type Patient } from '@fisiohub/shared'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { api } from '@/lib/api'
+import type { BarthelScaleInput, Patient } from '@/types'
 
 interface BarthelScaleFormProps {
   patientId?: string

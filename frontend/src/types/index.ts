@@ -27,11 +27,32 @@ export interface Patient {
   tenantId?: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
 export interface RegisterInput {
   name: string;
   email: string;
   password: string;
   confirmPassword: string;
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
 }
 
 export type UserRole = 'admin' | 'user' | 'doctor' | 'nurse' | 'therapist';
