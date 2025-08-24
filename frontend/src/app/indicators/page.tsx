@@ -15,8 +15,8 @@ import { DarkModeToggle } from '@/components/ui/dark-mode-toggle'
 import { LogOut, Shield } from 'lucide-react'
 import Link from 'next/link'
 // import { useToast } from '@/hooks/use-toast'
-// import type { IndicatorInput, BarthelScaleInput, MrcScaleInput } from '@fisiohub/shared'
 import { api } from '@/lib/api'
+import type { IndicatorInput, BarthelScaleInput, MrcScaleInput } from '@/types'
 
 export default function IndicatorsPage() {
   const { user, logout } = useAuth()
