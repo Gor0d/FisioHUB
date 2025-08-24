@@ -38,7 +38,8 @@
       "Bash(touch:*)",
       "Bash(chmod:*)",
       "Bash(cd:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(del Dockerfile)"
     ],
     "deny": [],
     "ask": []
