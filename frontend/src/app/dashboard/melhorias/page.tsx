@@ -11,6 +11,14 @@ import { api } from '@/lib/api'
 // import { Patient } from '@fisiohub/shared'
 import { TrendingUp, TrendingDown, Activity, Users } from 'lucide-react'
 
+// Tipo Patient temporário
+interface Patient {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+}
+
 interface DashboardData {
   summary: {
     totalPatients: number
