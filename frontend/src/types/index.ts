@@ -32,6 +32,7 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  specialty?: string;
   tenantId: string;
   createdAt: string;
   updatedAt: string;
@@ -47,6 +48,10 @@ export interface RegisterInput {
   email: string;
   password: string;
   confirmPassword: string;
+  phone?: string;
+  specialty?: string;
+  role?: UserRole;
+  crf?: string;
 }
 
 export interface ApiResponse<T = any> {
@@ -56,6 +61,15 @@ export interface ApiResponse<T = any> {
 }
 
 export type UserRole = 'admin' | 'user' | 'doctor' | 'nurse' | 'therapist';
+
+// User roles as constants for form usage
+export const USER_ROLES = {
+  ADMIN: 'admin' as const,
+  USER: 'user' as const,
+  DOCTOR: 'doctor' as const,
+  NURSE: 'nurse' as const,
+  THERAPIST: 'therapist' as const
+} as const;
 
 export interface IndicatorInput {
   name: string;

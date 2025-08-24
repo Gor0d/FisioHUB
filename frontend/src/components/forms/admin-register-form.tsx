@@ -3,19 +3,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-// // import { registerSchema, RegisterInput } from '@fisiohub/shared';
-// // import { UserRole } from '@fisiohub/shared';
-
-// Tipos temporários
-type RegisterInput = {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
-
-type UserRole = 'admin' | 'user' | 'doctor';
 import { Button } from '@/components/ui/button';
+import type { RegisterInput, USER_ROLES, UserRole } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
@@ -37,10 +26,11 @@ export function AdminRegisterForm({ onSwitchToLogin }: AdminRegisterFormProps) {
       name: '',
       email: '',
       password: '',
+      confirmPassword: '',
       crf: '',
       phone: '',
       specialty: '',
-      role: UserRole.ADMIN,
+      role: USER_ROLES.ADMIN,
     },
   });
 
@@ -60,11 +50,11 @@ export function AdminRegisterForm({ onSwitchToLogin }: AdminRegisterFormProps) {
 
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
-      case UserRole.ADMIN:
+      case USER_ROLES.ADMIN:
         return <Shield className="h-4 w-4" />;
-      case UserRole.PHYSIOTHERAPIST:
+      case USER_ROLES.PHYSIOTHERAPIST:
         return <UserCheck className="h-4 w-4" />;
-      case UserRole.RECEPTIONIST:
+      case USER_ROLES.RECEPTIONIST:
         return <Users className="h-4 w-4" />;
       default:
         return <User className="h-4 w-4" />;
@@ -73,11 +63,11 @@ export function AdminRegisterForm({ onSwitchToLogin }: AdminRegisterFormProps) {
 
   const getRoleLabel = (role: UserRole) => {
     switch (role) {
-      case UserRole.ADMIN:
+      case USER_ROLES.ADMIN:
         return 'Administrador';
-      case UserRole.PHYSIOTHERAPIST:
+      case USER_ROLES.PHYSIOTHERAPIST:
         return 'Fisioterapeuta';
-      case UserRole.RECEPTIONIST:
+      case USER_ROLES.RECEPTIONIST:
         return 'Recepcionista';
       default:
         return 'Usuário';
@@ -135,8 +125,8 @@ export function AdminRegisterForm({ onSwitchToLogin }: AdminRegisterFormProps) {
               <Input
                 id="name"
                 placeholder={
-                  selectedRole === UserRole.ADMIN ? "Administrador do Sistema" :
-                  selectedRole === UserRole.PHYSIOTHERAPIST ? "Dr. João Silva" :
+                  selectedRole === USER_ROLES.ADMIN ? "Administrador do Sistema" :
+                  selectedRole === USER_ROLES.PHYSIOTHERAPIST ? "Dr. João Silva" :
                   "Maria Santos"
                 }
                 className="pl-10"
@@ -206,15 +196,15 @@ export function AdminRegisterForm({ onSwitchToLogin }: AdminRegisterFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label htmlFor="crf" className="text-sm font-medium text-foreground">
-                {selectedRole === UserRole.PHYSIOTHERAPIST ? 'CRF' : 'Registro'}
+                {selectedRole === USER_ROLES.PHYSIOTHERAPIST ? 'CRF' : 'Registro'}
               </label>
               <div className="relative">
                 <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="crf"
                   placeholder={
-                    selectedRole === UserRole.PHYSIOTHERAPIST ? "12345-F" : 
-                    selectedRole === UserRole.ADMIN ? "ADM-001" : 
+                    selectedRole === USER_ROLES.PHYSIOTHERAPIST ? "12345-F" : 
+                    selectedRole === USER_ROLES.ADMIN ? "ADM-001" : 
                     "REC-001"
                   }
                   className="pl-10"
@@ -241,13 +231,13 @@ export function AdminRegisterForm({ onSwitchToLogin }: AdminRegisterFormProps) {
 
           <div className="space-y-2">
             <label htmlFor="specialty" className="text-sm font-medium text-foreground">
-              {selectedRole === UserRole.PHYSIOTHERAPIST ? 'Especialidade' : 'Área/Função'}
+              {selectedRole === USER_ROLES.PHYSIOTHERAPIST ? 'Especialidade' : 'Área/Função'}
             </label>
             <Input
               id="specialty"
               placeholder={
-                selectedRole === UserRole.PHYSIOTHERAPIST ? "Ex: Ortopedia, Neurologia, Esportiva..." :
-                selectedRole === UserRole.ADMIN ? "Administrador do Sistema" :
+                selectedRole === USER_ROLES.PHYSIOTHERAPIST ? "Ex: Ortopedia, Neurologia, Esportiva..." :
+                selectedRole === USER_ROLES.ADMIN ? "Administrador do Sistema" :
                 "Recepção e Atendimento"
               }
               {...form.register('specialty')}
