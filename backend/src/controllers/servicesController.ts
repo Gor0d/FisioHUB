@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '@/lib/prisma';
 import { createError } from '@/middleware/errorHandler';
 import { z } from 'zod';
-import { TenantRequest } from '@/middleware/tenant';
+import { TenantRequest } from '@/middleware/tenantResolver';
 
 // Schema de validação para criação de serviço
 const createServiceSchema = z.object({

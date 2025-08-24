@@ -36,7 +36,9 @@
       "Bash(npx ts-node:*)",
       "Bash(del prismadev.db)",
       "Bash(touch:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(cd:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

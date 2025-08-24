@@ -1,0 +1,73 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+      - staging
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend to Railway (Staging)
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+      
+      - name: Build TypeScript
+        working-directory: ./backend
+        run: npm run build
+      
+      - name: Deploy to Railway
+        uses: railway-app/cli@v2
+        with:
+          command: 'up --service fisiohub-backend-staging'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-frontend:
+    name: Deploy Frontend to Vercel (Staging)
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Build Next.js
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://fisiohub-backend-staging.railway.app
+      
+      - name: Deploy to Vercel
+        uses: vercel/action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+          vercel-args: '--target staging'

@@ -49,4 +49,16 @@ export const authApi = {
   },
 };
 
+export const tenantApi = {
+  register: async (data: any) => {
+    const response = await api.post('/api/tenants/register', data);
+    return response.data;
+  },
+  
+  getInfo: async (slug: string) => {
+    const response = await api.get(`/api/tenants/${slug}/info`);
+    return response.data;
+  },
+};
+
 export { api };

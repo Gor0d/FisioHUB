@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = env("NODE_ENV") == "production" ? "postgresql" : "sqlite"
-  url      = env("NODE_ENV") == "production" ? env("DATABASE_URL") : "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ================================
@@ -34,7 +34,7 @@ model Tenant {
   lastActivityAt DateTime @default(now())
   
   // Metadados
-  metadata      Json?  // JSON para configurações customizadas
+  metadata      String?  // JSON para configurações customizadas
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   
@@ -157,9 +157,8 @@ model UserInvite {
 }
 
 // ================================
-// SCHEMA TENANT (tabelas replicadas por tenant)
+// SCHEMA TENANT (tabelas com tenantId)
 // ================================
-// As tabelas abaixo existem em cada schema de tenant
 
 // Usuários do tenant
 model User {
@@ -177,6 +176,9 @@ model User {
   // Status
   isActive  Boolean  @default(true)
   
+  // Tenant ID para isolamento
+  tenantId  String
+  
   // Controle
   lastLoginAt DateTime?
   createdAt   DateTime @default(now())
@@ -187,6 +189,7 @@ model User {
   appointments Appointment[]
   evolutions   Evolution[]
   
+  @@index([tenantId])
   @@map("users")
 }
 
@@ -203,6 +206,9 @@ model Patient {
   observations String?
   isActive    Boolean   @default(true)
   
+  // Tenant ID para isolamento
+  tenantId    String
+  
   // Responsável
   userId       String
   user         User          @relation(fields: [userId], references: [id])
@@ -214,6 +220,7 @@ model Patient {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
+  @@index([tenantId])
   @@map("patients")
 }
 
@@ -226,6 +233,9 @@ model Appointment {
   notes       String?
   price       Float?
   
+  // Tenant ID para isolamento
+  tenantId    String
+  
   // Relacionamentos
   userId    String
   user      User      @relation(fields: [userId], references: [id])
@@ -236,6 +246,7 @@ model Appointment {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
+  @@index([tenantId])
   @@map("appointments")
 }
 
@@ -248,6 +259,9 @@ model Evolution {
   exercises    String?
   nextSteps    String?
   
+  // Tenant ID para isolamento
+  tenantId     String
+  
   // Relacionamentos
   userId        String
   user          User        @relation(fields: [userId], references: [id])
@@ -259,6 +273,7 @@ model Evolution {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
+  @@index([tenantId])
   @@map("evolutions")
 }
 

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { tenantAuth } from '@/utils/tenantAuth';
-import { tenantService } from '@/services/tenantService';
+import { tenantService } from '@/services/tenantService-simple';
 import { createError } from '@/middleware/errorHandler';
 
 // Schemas de validação
@@ -229,11 +229,8 @@ export const getTenantInfo = async (req: Request, res: Response) => {
         name: tenant.name,
         slug: tenant.slug,
         status: tenant.status,
-        logo: tenant.logoUrl,
-        primaryColor: tenant.primaryColor,
-        secondaryColor: tenant.secondaryColor,
-        customDomain: tenant.customDomain,
-        plan: tenant.subscriptions[0]?.plan.name || 'Básico'
+        plan: tenant.plan,
+        createdAt: tenant.createdAt
       }
     });
     

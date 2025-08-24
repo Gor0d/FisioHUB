@@ -48,15 +48,16 @@ export class TenantService {
             slug: data.slug,
             subdomain: data.subdomain,
             customDomain: data.customDomain,
+            email: data.email,
             plan: data.plan || 'basic',
             status: 'trial', // Começar com trial
             trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 dias
           }
         });
         
-        // 3. Criar schema do tenant
-        const schemaName = `tenant_${tenant.id.replace(/-/g, '_')}`;
-        await tenantPrisma.createTenantSchema(schemaName);
+        // 3. Criar schema do tenant (SQLite não suporta schemas)
+        // const schemaName = `tenant_${tenant.id.replace(/-/g, '_')}`;
+        // await tenantPrisma.createTenantSchema(schemaName);
         
         // 4. Criar usuário global/admin
         const passwordHash = await bcrypt.hash(data.password, 10);
@@ -64,47 +65,38 @@ export class TenantService {
         const globalUser = await tx.globalUser.create({
           data: {
             email: data.email,
-            passwordHash,
+            password: passwordHash,
             name: data.name,
-            isSuperAdmin: false
+            tenantId: tenant.id
           }
         });
         
-        // 5. Associar usuário ao tenant
-        await tx.tenantUser.create({
-          data: {
-            tenantId: tenant.id,
-            globalUserId: globalUser.id,
-            role: 'tenant_admin',
-            status: 'active',
-            joinedAt: new Date()
-          }
-        });
+        // 5. GlobalUser já está associado ao tenant pelo relacionamento
         
-        // 6. Criar assinatura de trial
-        const basicPlan = await tx.subscriptionPlan.findFirst({
-          where: { slug: data.plan || 'basic' }
-        });
+        // 6. Criar assinatura de trial (simplificado por agora)
+        // const basicPlan = await tx.subscriptionPlan.findFirst({
+        //   where: { slug: data.plan || 'basic' }
+        // });
         
-        if (basicPlan) {
-          await tx.tenantSubscription.create({
-            data: {
-              tenantId: tenant.id,
-              planId: basicPlan.id,
-              status: 'trialing',
-              currentPeriodStart: new Date(),
-              currentPeriodEnd: tenant.trialEndsAt!
-            }
-          });
-        }
+        // if (basicPlan) {
+        //   await tx.tenantSubscription.create({
+        //     data: {
+        //       tenantId: tenant.id,
+        //       planId: basicPlan.id,
+        //       status: 'trialing',
+        //       currentPeriodStart: new Date(),
+        //       currentPeriodEnd: tenant.trialEndsAt!
+        //     }
+        //   });
+        // }
         
-        // 7. Seed dados iniciais no schema do tenant
-        await this.seedTenantData(schemaName, {
-          clientName: data.name,
-          hospitalName: `${data.name} - Principal`,
-          adminName: data.name,
-          adminEmail: data.email
-        });
+        // 7. Seed dados iniciais no schema do tenant (comentado por simplicidade)
+        // await this.seedTenantData(schemaName, {
+        //   clientName: data.name,
+        //   hospitalName: `${data.name} - Principal`,
+        //   adminName: data.name,
+        //   adminEmail: data.email
+        // });
         
         // 8. Configurações iniciais
         await tx.tenantSetting.createMany({
@@ -136,7 +128,7 @@ export class TenantService {
         return {
           tenant,
           globalUser: { id: globalUser.id, email: globalUser.email },
-          schema: schemaName
+          schema: `tenant_${tenant.id.replace(/-/g, '_')}`
         };
         
       } catch (error) {

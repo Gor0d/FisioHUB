@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { tenantApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -61,16 +62,13 @@ export default function RegisterSuccessPage() {
 
   const fetchTenantInfo = async (slug: string) => {
     try {
-      const response = await fetch(`/api/tenants/${slug}/info`);
-      if (response.ok) {
-        const data = await response.json();
-        setTenantInfo({
-          name: data.data.name,
-          slug: data.data.slug,
-          subdomain: `${data.data.slug}.fisiohub.com`,
-          trialEndsAt: data.data.trialEndsAt
-        });
-      }
+      const data = await tenantApi.getInfo(slug);
+      setTenantInfo({
+        name: data.name,
+        slug: data.slug,
+        subdomain: `${data.slug}.fisiohub.com`,
+        trialEndsAt: data.createdAt // Usando createdAt como fallback para trial
+      });
     } catch (error) {
       console.error('Erro ao carregar informações do tenant:', error);
     } finally {

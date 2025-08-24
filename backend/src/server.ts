@@ -15,6 +15,7 @@ import mrcScalesRoutes from '@/routes/mrcScales';
 import { scalesRouter } from '@/routes/scales';
 import servicesRoutes from '@/routes/services';
 import { tenantAuthRoutes } from '@/routes/tenantAuth';
+import { publicRoutes } from '@/routes/public';
 // import clientsRoutes from '@/routes/clients';
 // import indicatorTemplatesRoutes from '@/routes/indicatorTemplates';
 
@@ -53,6 +54,7 @@ app.use('/api/barthel-scales', barthelScalesRoutes);
 app.use('/api/mrc-scales', mrcScalesRoutes);
 app.use('/api/scales', scalesRouter);
 app.use('/api/services', servicesRoutes);
+app.use('/api', publicRoutes);
 app.use('/api', tenantAuthRoutes);
 // app.use('/api/clients', clientsRoutes);
 // app.use('/api/indicator-templates', indicatorTemplatesRoutes);

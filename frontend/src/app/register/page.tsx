@@ -25,6 +25,7 @@ import {
   Stethoscope
 } from 'lucide-react';
 import Link from 'next/link';
+import { tenantApi } from '@/lib/api';
 
 interface FormData {
   // Informações da empresa
@@ -119,10 +120,10 @@ export default function RegisterPage() {
       const timer = setTimeout(async () => {
         setCheckingSlug(true);
         try {
-          const response = await fetch(`/api/tenants/${formData.slug}/info`);
-          setSlugAvailable(response.status === 404); // 404 = não encontrado = disponível
+          await tenantApi.getInfo(formData.slug);
+          setSlugAvailable(false); // Se encontrou, não está disponível
         } catch (error) {
-          setSlugAvailable(true); // Em caso de erro, assume disponível
+          setSlugAvailable(true); // Em caso de erro (404), assume disponível
         } finally {
           setCheckingSlug(false);
         }
@@ -204,22 +205,14 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/tenants/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          slug: formData.slug,
-          email: formData.adminEmail,
-          password: formData.password,
-          plan: formData.plan,
-          subdomain: formData.subdomain
-        })
+      const data = await tenantApi.register({
+        name: formData.name,
+        slug: formData.slug,
+        email: formData.adminEmail,
+        password: formData.password,
+        plan: formData.plan,
+        subdomain: formData.subdomain
       });
-
-      const data = await response.json();
 
       if (data.success) {
         // Redirecionar para página de sucesso
@@ -227,8 +220,17 @@ export default function RegisterPage() {
       } else {
         setErrors({ submit: data.message || 'Erro ao criar conta' });
       }
-    } catch (error) {
-      setErrors({ submit: 'Erro de conexão. Tente novamente.' });
+    } catch (error: any) {
+      console.error('Erro no registro:', error);
+      let errorMessage = 'Erro de conexão. Tente novamente.';
+      
+      if (error.response?.status === 409) {
+        errorMessage = 'Email já está em uso. Tente fazer login ou use outro email.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      setErrors({ submit: errorMessage });
     } finally {
       setLoading(false);
     }
