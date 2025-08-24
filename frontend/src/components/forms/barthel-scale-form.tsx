@@ -288,7 +288,7 @@ export function BarthelScaleForm({ patientId, evolutionId, onSubmit, initialData
                       type="radio"
                       {...register(activity as keyof BarthelScaleInput)}
                       value={option.value}
-                      checked={scores[activity] === option.value}
+                      checked={scores[activity as keyof typeof scores] === option.value}
                       onChange={() => handleScoreChange(activity, option.value)}
                       className="w-4 h-4 text-blue-600"
                     />
