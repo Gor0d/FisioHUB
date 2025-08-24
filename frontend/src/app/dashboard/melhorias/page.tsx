@@ -17,6 +17,10 @@ interface Patient {
   name: string;
   email?: string;
   phone?: string;
+  cpf?: string;
+  birthDate?: string;
+  address?: string;
+  diagnosis?: string;
 }
 
 interface DashboardData {
