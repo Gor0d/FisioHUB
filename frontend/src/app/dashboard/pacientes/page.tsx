@@ -197,7 +197,7 @@ export default function PacientesPage() {
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
                         <h3 className="font-medium text-gray-900">
-                          {formatPatientDisplay(patient.name, patient.attendanceNumber)}
+                          {formatPatientDisplay(patient)}
                         </h3>
                         {patient.email && (
                           <p className="text-sm text-gray-600">📧 {patient.email}</p>

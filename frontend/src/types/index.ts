@@ -56,5 +56,15 @@ export interface MrcScaleInput {
 
 // Função helper para formatação
 export function formatPatientDisplay(patient: Patient): string {
-  return `${patient.name} ${patient.cpf ? `(${patient.cpf})` : ''}`;
+  const parts = [patient.name];
+  
+  if (patient.attendanceNumber) {
+    parts.push(`#${patient.attendanceNumber}`);
+  }
+  
+  if (patient.cpf) {
+    parts.push(`(${patient.cpf})`);
+  }
+  
+  return parts.join(' ');
 }
