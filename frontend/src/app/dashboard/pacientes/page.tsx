@@ -10,7 +10,7 @@ import { api } from '@/lib/api'
 // import { Patient, formatPatientDisplay } from '@fisiohub/shared'
 // import { CID_CODES } from '@fisiohub/shared/src/data/cid-codes'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Patient, formatPatientDisplay } from '@/types'
+import { Patient, formatPatientDisplay, CID_CODES } from '@/types'
 
 interface PatientFormData {
   name: string

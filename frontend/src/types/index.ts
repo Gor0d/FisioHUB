@@ -54,6 +54,18 @@ export interface MrcScaleInput {
   date: string;
 }
 
+// CID Codes básicos
+export const CID_CODES = [
+  { code: 'G80', description: 'Paralisia cerebral' },
+  { code: 'G81', description: 'Hemiplegia' },
+  { code: 'G82', description: 'Paraplegia e tetraplegia' },
+  { code: 'M79', description: 'Outros transtornos dos tecidos moles' },
+  { code: 'M25', description: 'Outros transtornos articulares' },
+  { code: 'S72', description: 'Fratura do fêmur' },
+  { code: 'S82', description: 'Fratura da perna' },
+  { code: 'I64', description: 'Acidente vascular cerebral' },
+];
+
 // Função helper para formatação
 export function formatPatientDisplay(patient: Patient): string {
   const parts = [patient.name];
