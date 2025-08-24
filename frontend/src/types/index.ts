@@ -60,7 +60,7 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-export type UserRole = 'admin' | 'user' | 'doctor' | 'nurse' | 'therapist';
+export type UserRole = 'admin' | 'user' | 'doctor' | 'nurse' | 'therapist' | 'physiotherapist' | 'receptionist';
 
 // User roles as constants for form usage
 export const USER_ROLES = {
@@ -68,7 +68,9 @@ export const USER_ROLES = {
   USER: 'user' as const,
   DOCTOR: 'doctor' as const,
   NURSE: 'nurse' as const,
-  THERAPIST: 'therapist' as const
+  THERAPIST: 'therapist' as const,
+  PHYSIOTHERAPIST: 'physiotherapist' as const,
+  RECEPTIONIST: 'receptionist' as const
 } as const;
 
 export interface IndicatorInput {
@@ -100,6 +102,20 @@ export const CID_CODES = [
   { code: 'S82', description: 'Fratura da perna' },
   { code: 'I64', description: 'Acidente vascular cerebral' },
 ];
+
+// Service interface
+export interface Service {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+  icon: string;
+  stats: {
+    users: number;
+    patients: number;
+    indicators: number;
+  };
+}
 
 // Função helper para formatação
 export function formatPatientDisplay(patient: Patient): string {
