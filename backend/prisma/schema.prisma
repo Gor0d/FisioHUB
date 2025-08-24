@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = env("NODE_ENV") == "production" ? "postgresql" : "sqlite"
-  url      = env("NODE_ENV") == "production" ? env("DATABASE_URL") : "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ================================
