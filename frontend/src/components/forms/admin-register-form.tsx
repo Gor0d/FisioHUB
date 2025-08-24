@@ -97,7 +97,7 @@ export function AdminRegisterForm({ onSwitchToLogin }: AdminRegisterFormProps) {
               Tipo de usuário *
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {Object.values(UserRole).map((role) => (
+              {Object.values(USER_ROLES).map((role) => (
                 <button
                   key={role}
                   type="button"
