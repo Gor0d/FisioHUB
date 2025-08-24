@@ -77,18 +77,36 @@ export interface IndicatorInput {
   name: string;
   value: number;
   date: string;
+  patientId?: string;
+  collaborator?: string;
+  sector?: string;
+  shift?: string;
 }
 
 export interface BarthelScaleInput {
   patientId: string;
   score: number;
   date: string;
+  evolutionId?: string;
+  type?: string;
+  feeding?: number;
+  bathing?: number;
+  grooming?: number;
+  dressing?: number;
+  bowelControl?: number;
+  bladderControl?: number;
+  toileting?: number;
+  transfer?: number;
+  mobility?: number;
+  stairs?: number;
 }
 
 export interface MrcScaleInput {
   patientId: string;
   score: number;
   date: string;
+  evolutionId?: string;
+  type?: string;
 }
 
 // CID Codes básicos

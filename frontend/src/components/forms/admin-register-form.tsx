@@ -246,7 +246,7 @@ export function AdminRegisterForm({ onSwitchToLogin }: AdminRegisterFormProps) {
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Criando usuário...' : `Criar ${getRoleLabel(selectedRole)}`}
+            {isLoading ? 'Criando usuário...' : `Criar ${selectedRole ? getRoleLabel(selectedRole) : 'Usuário'}`}
           </Button>
 
           {onSwitchToLogin && (
