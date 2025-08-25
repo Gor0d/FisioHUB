@@ -81,6 +81,21 @@ export interface IndicatorInput {
   collaborator?: string;
   sector?: string;
   shift?: string;
+  // Campos específicos dos indicadores
+  patientsHospitalized?: number;
+  patientsPrescribed?: number;
+  patientsReceived?: number;
+  sessionsTotal?: number;
+  sessionsCompleted?: number;
+  sessionsCancelled?: number;
+  averageSessionTime?: number;
+  patientsSatisfied?: number;
+  improvementRate?: number;
+  dischargeRate?: number;
+  readmissionRate?: number;
+  complicationRate?: number;
+  mortalityRate?: number;
+  [key: string]: string | number | undefined;
 }
 
 export interface BarthelScaleInput {
@@ -99,6 +114,7 @@ export interface BarthelScaleInput {
   transfer?: number;
   mobility?: number;
   stairs?: number;
+  [key: string]: string | number | undefined;
 }
 
 export interface MrcScaleInput {
@@ -107,6 +123,14 @@ export interface MrcScaleInput {
   date: string;
   evolutionId?: string;
   type?: string;
+  // Campos específicos do MRC (músculos avaliados)
+  shoulderAbduction?: number;
+  elbowFlexion?: number;
+  wristExtension?: number;
+  hipFlexion?: number;
+  kneeExtension?: number;
+  ankleFlexion?: number;
+  [key: string]: string | number | undefined;
 }
 
 // CID Codes básicos
