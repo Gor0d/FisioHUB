@@ -66,7 +66,7 @@ export default function RegisterSuccessPage() {
       setTenantInfo({
         name: data.name,
         slug: data.slug,
-        subdomain: `${data.slug}.fisiohub.com`,
+        subdomain: `${data.slug}.fisiohub.app`,
         trialEndsAt: data.createdAt // Usando createdAt como fallback para trial
       });
     } catch (error) {

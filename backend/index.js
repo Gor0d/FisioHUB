@@ -1,10 +1,15 @@
 const express = require('express');
 const cors = require('cors');
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Temporary in-memory storage for registered tenants
+// Initialize Prisma
+const prisma = new PrismaClient();
+
+// Temporary in-memory storage for registered tenants (fallback)
 const registeredTenants = {};
 
 // Middleware
@@ -44,76 +49,183 @@ app.post('/api/test', (req, res) => {
   });
 });
 
-// Simple registration (with memory storage)
-app.post('/api/tenants/register', (req, res) => {
+// Registration with real database
+app.post('/api/tenants/register', async (req, res) => {
   try {
-    console.log('Registration via index.js:', req.body);
+    console.log('Registration via index.js with database:', req.body);
     const { name, slug, email, password } = req.body;
     
-    // Store tenant in memory
-    registeredTenants[slug] = {
-      id: `temp-${Date.now()}`,
-      name,
-      slug,
-      email,
-      status: 'trial',
-      plan: 'professional',
-      createdAt: new Date().toISOString(),
-      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-    };
-    
-    res.json({
-      success: true,
-      message: 'Conta criada com sucesso!',
-      data: { 
-        tenant: registeredTenants[slug],
-        admin: {
-          email,
-          name: `Admin ${name}`
-        },
-        note: 'Conta temporária - database será reconectado em breve'
+    // Basic validation
+    if (!name || !slug || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Todos os campos são obrigatórios'
+      });
+    }
+
+    // Try database first, fallback to memory
+    try {
+      // Check if slug is already taken in database
+      const existingTenant = await prisma.tenant.findFirst({
+        where: { slug }
+      });
+      
+      if (existingTenant) {
+        return res.status(409).json({
+          success: false,
+          message: 'Este identificador já está em uso',
+          code: 'DUPLICATE_SLUG'
+        });
       }
-    });
+      
+      // Create tenant in database
+      const tenant = await prisma.tenant.create({
+        data: {
+          name,
+          slug,
+          email,
+          status: 'trial',
+          plan: 'professional',
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+        }
+      });
+      
+      // Hash password and create admin user
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const adminUser = await prisma.globalUser.create({
+        data: {
+          email,
+          name: `Admin ${name}`,
+          password: hashedPassword,
+          role: 'admin',
+          tenantId: tenant.id
+        }
+      });
+      
+      console.log(`✅ Tenant criado no DB: ${tenant.name} (${tenant.slug})`);
+      console.log(`✅ Admin criado no DB: ${adminUser.email}`);
+      
+      res.json({
+        success: true,
+        message: 'Conta criada com sucesso!',
+        data: { 
+          tenant: {
+            id: tenant.id,
+            name: tenant.name,
+            slug: tenant.slug,
+            status: tenant.status,
+            plan: tenant.plan,
+            createdAt: tenant.createdAt,
+            trialEndsAt: tenant.trialEndsAt
+          },
+          admin: {
+            email: adminUser.email,
+            name: adminUser.name
+          }
+        }
+      });
+      
+    } catch (dbError) {
+      console.warn('Database error, using memory fallback:', dbError.message);
+      
+      // Fallback to memory storage
+      registeredTenants[slug] = {
+        id: `temp-${Date.now()}`,
+        name,
+        slug,
+        email,
+        status: 'trial',
+        plan: 'professional',
+        createdAt: new Date().toISOString(),
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+      };
+      
+      res.json({
+        success: true,
+        message: 'Conta criada com sucesso! (modo temporário)',
+        data: { 
+          tenant: registeredTenants[slug],
+          admin: {
+            email,
+            name: `Admin ${name}`
+          },
+          note: 'Dados salvos temporariamente - database será reconectado'
+        }
+      });
+    }
+    
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Tenant info - check registered tenants or availability
-app.get('/api/tenants/:slug/info', (req, res) => {
+// Tenant info - check database first, then memory, then availability
+app.get('/api/tenants/:slug/info', async (req, res) => {
   const slug = req.params.slug;
   
-  // Check if tenant was registered (stored in memory)
-  if (registeredTenants[slug]) {
-    return res.json({
-      success: true,
-      message: 'Tenant encontrado',
-      ...registeredTenants[slug]
-    });
-  }
-  
-  // Check reserved slugs
-  const takenSlugs = ['admin', 'test', 'api', 'www', 'fisiohub', 'demo'];
-  
-  if (takenSlugs.includes(slug)) {
-    return res.json({
-      success: true,
-      message: 'Slug já existe',
-      data: { 
-        slug: slug, 
-        taken: true,
-        timestamp: new Date().toISOString() 
+  try {
+    // Try database first
+    try {
+      const tenant = await prisma.tenant.findFirst({
+        where: { slug }
+      });
+      
+      if (tenant) {
+        return res.json({
+          success: true,
+          message: 'Tenant encontrado',
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          status: tenant.status,
+          plan: tenant.plan,
+          createdAt: tenant.createdAt,
+          trialEndsAt: tenant.trialEndsAt
+        });
       }
+    } catch (dbError) {
+      console.warn('Database error in tenant info:', dbError.message);
+    }
+    
+    // Check if tenant was registered (stored in memory)
+    if (registeredTenants[slug]) {
+      return res.json({
+        success: true,
+        message: 'Tenant encontrado (temporário)',
+        ...registeredTenants[slug]
+      });
+    }
+    
+    // Check reserved slugs
+    const takenSlugs = ['admin', 'test', 'api', 'www', 'fisiohub', 'demo'];
+    
+    if (takenSlugs.includes(slug)) {
+      return res.json({
+        success: true,
+        message: 'Slug já existe',
+        data: { 
+          slug: slug, 
+          taken: true,
+          timestamp: new Date().toISOString() 
+        }
+      });
+    }
+    
+    // Most slugs should return 404 (available)
+    return res.status(404).json({
+      success: false,
+      message: 'Tenant não encontrado (slug disponível)',
+      code: 'NOT_FOUND'
+    });
+    
+  } catch (error) {
+    console.error('Error in tenant info:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
     });
   }
-  
-  // Most slugs should return 404 (available)
-  return res.status(404).json({
-    success: false,
-    message: 'Tenant não encontrado (slug disponível)',
-    code: 'NOT_FOUND'
-  });
 });
 
 // Catch all

@@ -373,7 +373,7 @@ export default function RegisterPage() {
                           <p className="text-red-500 text-sm mt-1">{errors.slug}</p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          Seu subdomínio será: <strong>{formData.slug}.fisiohub.com</strong>
+                          Seu subdomínio será: <strong>{formData.slug}.fisiohub.app</strong>
                         </p>
                       </div>
 
@@ -492,7 +492,7 @@ export default function RegisterPage() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Subdomínio:</span>
-                            <span className="text-sm font-medium">{formData.slug}.fisiohub.com</span>
+                            <span className="text-sm font-medium">{formData.slug}.fisiohub.app</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Administrador:</span>
