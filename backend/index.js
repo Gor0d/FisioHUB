@@ -1,3 +1,8 @@
+// Load environment variables
+require('dotenv').config({
+  path: process.env.NODE_ENV === 'production' ? '.env.railway' : '.env'
+});
+
 const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
@@ -56,6 +61,18 @@ app.get('/api/test', (req, res) => {
   res.json({ 
     message: 'Backend funcionando via index.js!', 
     timestamp: new Date().toISOString() 
+  });
+});
+
+// Environment debug endpoint
+app.get('/api/debug-env', (req, res) => {
+  res.json({
+    nodeEnv: process.env.NODE_ENV,
+    hasDatabase: !!process.env.DATABASE_URL,
+    databaseUrl: process.env.DATABASE_URL ? 
+      process.env.DATABASE_URL.substring(0, 30) + '...[REDACTED]' : 'undefined',
+    port: process.env.PORT,
+    timestamp: new Date().toISOString()
   });
 });
 
