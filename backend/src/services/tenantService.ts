@@ -228,13 +228,6 @@ export class TenantService {
           { slug },
           { subdomain: slug }
         ]
-      },
-      include: {
-        subscriptions: {
-          where: { status: 'active' },
-          include: { plan: true }
-        },
-        settings: true
       }
     });
   }
