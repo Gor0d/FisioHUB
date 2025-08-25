@@ -52,16 +52,40 @@ app.get('/api/db-test', async (req, res) => {
     const result = await prisma.$queryRaw`SELECT 1 as test`;
     console.log('Database query result:', result);
     
-    // Test tenant count
-    const tenantCount = await prisma.tenant.count();
-    console.log('Total tenants in database:', tenantCount);
+    // Check if tables exist
+    const tableCheck = await prisma.$queryRaw`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('tenant', 'globalUser', 'User')
+    `;
+    console.log('Tables found:', tableCheck);
+    
+    let tenantCount = 'N/A';
+    let globalUserCount = 'N/A';
+    
+    try {
+      tenantCount = await prisma.tenant.count();
+      console.log('Total tenants in database:', tenantCount);
+    } catch (e) {
+      console.log('Error counting tenants:', e.message);
+    }
+    
+    try {
+      globalUserCount = await prisma.globalUser.count();
+      console.log('Total globalUsers in database:', globalUserCount);
+    } catch (e) {
+      console.log('Error counting globalUsers:', e.message);
+    }
     
     res.json({
       success: true,
       message: 'Database connection successful!',
       data: {
         connected: true,
+        tablesFound: tableCheck,
         tenantCount,
+        globalUserCount,
         testQuery: result,
         timestamp: new Date().toISOString()
       }
@@ -110,10 +134,14 @@ app.post('/api/tenants/register', async (req, res) => {
 
     // Try database first, fallback to memory
     try {
+      console.log('🔍 Attempting database operations...');
+      
       // Check if slug is already taken in database
+      console.log('🔍 Checking existing tenant for slug:', slug);
       const existingTenant = await prisma.tenant.findFirst({
         where: { slug }
       });
+      console.log('🔍 Existing tenant check result:', existingTenant ? 'FOUND' : 'NOT_FOUND');
       
       if (existingTenant) {
         return res.status(409).json({
@@ -124,6 +152,7 @@ app.post('/api/tenants/register', async (req, res) => {
       }
       
       // Create tenant in database
+      console.log('🔍 Creating tenant in database...');
       const tenant = await prisma.tenant.create({
         data: {
           name,
@@ -134,8 +163,10 @@ app.post('/api/tenants/register', async (req, res) => {
           trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
         }
       });
+      console.log('✅ Tenant created:', tenant.id);
       
       // Hash password and create admin user
+      console.log('🔍 Creating admin user...');
       const hashedPassword = await bcrypt.hash(password, 10);
       const adminUser = await prisma.globalUser.create({
         data: {
@@ -146,13 +177,14 @@ app.post('/api/tenants/register', async (req, res) => {
           tenantId: tenant.id
         }
       });
+      console.log('✅ Admin user created:', adminUser.id);
       
-      console.log(`✅ Tenant criado no DB: ${tenant.name} (${tenant.slug})`);
-      console.log(`✅ Admin criado no DB: ${adminUser.email}`);
+      console.log(`✅ SUCCESS: Tenant criado no DB: ${tenant.name} (${tenant.slug})`);
+      console.log(`✅ SUCCESS: Admin criado no DB: ${adminUser.email}`);
       
       res.json({
         success: true,
-        message: 'Conta criada com sucesso!',
+        message: 'Conta criada com sucesso! (DATABASE)',
         data: { 
           tenant: {
             id: tenant.id,
@@ -171,7 +203,12 @@ app.post('/api/tenants/register', async (req, res) => {
       });
       
     } catch (dbError) {
-      console.warn('Database error, using memory fallback:', dbError.message);
+      console.error('🚨 DATABASE ERROR DETAILS:');
+      console.error('Error type:', dbError.constructor.name);
+      console.error('Error code:', dbError.code);
+      console.error('Error message:', dbError.message);
+      console.error('Error stack:', dbError.stack);
+      console.warn('🔄 Using memory fallback due to error above');
       
       // Fallback to memory storage
       registeredTenants[slug] = {
