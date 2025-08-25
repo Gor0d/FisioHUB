@@ -153,18 +153,24 @@ export const registerTenant = async (req: Request, res: Response) => {
   try {
     console.log('registerTenant called with body:', JSON.stringify(req.body, null, 2));
     
-    // Temporary simplified response for debugging
-    const { name, slug, email } = req.body;
+    const validatedData = createTenantSchema.parse(req.body);
+    
+    // Criar tenant completo
+    const result = await tenantService.createTenant(validatedData);
+    
+    console.log(`✅ Novo tenant criado: ${result.tenant.name} (${result.tenant.slug})`);
     
     res.status(201).json({
       success: true,
-      message: 'Tenant criado com sucesso! (modo debug)',
+      message: 'Tenant criado com sucesso! Verifique seu email para ativar a conta.',
       data: {
         tenant: {
-          id: 'temp-id-' + Date.now(),
-          name: name || 'Teste',
-          slug: slug || 'teste',
-          status: 'active'
+          id: result.tenant.id,
+          name: result.tenant.name,
+          slug: result.tenant.slug,
+          status: result.tenant.status,
+          plan: result.tenant.plan,
+          trialEndsAt: result.tenant.trialEndsAt
         }
       }
     });
@@ -212,15 +218,24 @@ export const getTenantInfo = async (req: Request, res: Response) => {
     const { slug } = req.params;
     console.log('getTenantInfo called with slug:', slug);
     
-    // Temporary simplified response for debugging
+    const tenant = await tenantService.findTenantBySlug(slug);
+    
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tenant não encontrado'
+      });
+    }
+    
     res.json({
       success: true,
       data: {
-        slug: slug,
-        name: `Tenant ${slug}`,
-        status: 'active',
-        plan: 'basic',
-        createdAt: new Date().toISOString()
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        status: tenant.status,
+        plan: tenant.plan,
+        createdAt: tenant.createdAt
       }
     });
     
