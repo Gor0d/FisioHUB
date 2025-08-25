@@ -335,11 +335,11 @@ export default function RegisterPage() {
                     <div className="space-y-6 opacity-0 animate-[fadeInSlideUp_0.5s_ease-in-out_forwards]">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Nome da Empresa/Building2 *
+                          Nome da Empresa *
                         </label>
                         <Input
                           type="text"
-                          placeholder="Building2 São José"
+                          placeholder="Hospital São José"
                           value={formData.name}
                           onChange={(e) => updateFormData('name', e.target.value)}
                           className={errors.name ? 'border-red-500' : ''}
