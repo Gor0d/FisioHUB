@@ -161,7 +161,7 @@ export function BarthelScaleForm({ patientId, evolutionId, onSubmit, initialData
   const handleScoreChange = (activity: string, value: number | string) => {
     const numericValue = Number(value)
     setScores(prev => ({ ...prev, [activity]: numericValue }))
-    setValue(activity as keyof BarthelScaleInput, numericValue, { shouldValidate: true })
+    setValue(activity as any, numericValue, { shouldValidate: true })
   }
 
   const onFormSubmit = async (data: BarthelScaleInput) => {
