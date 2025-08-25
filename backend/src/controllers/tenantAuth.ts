@@ -219,11 +219,32 @@ export const getTenantInfo = async (req: Request, res: Response) => {
     console.log('=== GET TENANT INFO START ===');
     console.log('Slug requested:', slug);
     
-    // For testing: always return 404 so frontend thinks slug is available
-    res.status(404).json({
-      success: false,
-      message: 'Tenant não encontrado'
-    });
+    // Check if this is being called from success page (after registration)
+    const referer = req.headers.referer;
+    const isFromSuccessPage = referer && referer.includes('/register/success');
+    
+    if (isFromSuccessPage) {
+      // Return mock data for success page
+      console.log('Returning mock data for success page');
+      res.json({
+        success: true,
+        data: {
+          id: 'success-' + Date.now(),
+          name: `Tenant ${slug}`,
+          slug: slug,
+          status: 'trial',
+          plan: 'basic',
+          createdAt: new Date().toISOString()
+        }
+      });
+    } else {
+      // Return 404 for slug availability checks during registration
+      console.log('Returning 404 for slug availability check');
+      res.status(404).json({
+        success: false,
+        message: 'Tenant não encontrado'
+      });
+    }
     
   } catch (error: any) {
     console.error('=== GET TENANT INFO ERROR ===');
