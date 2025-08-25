@@ -59,17 +59,67 @@ router.get('/test-basic', async (req, res) => {
 });
 
 /**
- * Test database connection
+ * Test database connection and create test data if needed
  */
 router.get('/test-db', async (req, res) => {
   try {
     const { prisma } = require('@/lib/prisma');
-    const count = await prisma.tenant.count();
+    const bcrypt = require('bcryptjs');
+    
+    let count = await prisma.tenant.count();
+    let testTenant = null;
+    let testUser = null;
+    
+    // If no tenants exist, create test data
+    if (count === 0 && req.query.createTest === 'true') {
+      const slug = 'hospital-teste-' + Date.now();
+      const email = 'admin@teste.com';
+      const password = 'teste123';
+      
+      // Create test tenant
+      testTenant = await prisma.tenant.create({
+        data: {
+          name: 'Hospital Teste',
+          slug: slug,
+          email: email,
+          status: 'trial',
+          plan: 'basic',
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+        }
+      });
+      
+      // Create admin user
+      const hashedPassword = await bcrypt.hash(password, 10);
+      testUser = await prisma.globalUser.create({
+        data: {
+          email: email,
+          name: 'Admin Hospital Teste',
+          password: hashedPassword,
+          role: 'admin',
+          tenantId: testTenant.id
+        }
+      });
+      
+      count = 1;
+    }
+    
     res.json({ 
       success: true, 
       message: 'Database connected', 
       tenantCount: count,
-      env: process.env.NODE_ENV 
+      env: process.env.NODE_ENV,
+      testData: testTenant ? {
+        tenant: {
+          id: testTenant.id,
+          name: testTenant.name,
+          slug: testTenant.slug
+        },
+        admin: {
+          email: testUser.email,
+          password: 'teste123',
+          tenantSlug: testTenant.slug
+        }
+      } : null
     });
   } catch (error: any) {
     console.error('Database test error:', error);
