@@ -76,7 +76,7 @@ export function ServiceSelector({
       color: '#3B82F6',
       icon: 'stethoscope',
       stats: { users: 0, patients: 0, indicators: 0 }
-    } as Service,
+    } as any,
     ...filteredServices,
   ];
 
