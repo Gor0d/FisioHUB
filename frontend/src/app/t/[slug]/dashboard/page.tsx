@@ -67,28 +67,35 @@ const quickActions = [
     title: "Novo Paciente",
     description: "Cadastrar um novo paciente no sistema",
     icon: Users,
-    href: "#",
+    href: `/t/${slug}/patients/new`,
     color: "bg-blue-500"
+  },
+  {
+    title: "Ver Pacientes",
+    description: "Gerenciar pacientes cadastrados",
+    icon: Users,
+    href: `/t/${slug}/patients`,
+    color: "bg-blue-600"
   },
   {
     title: "Agendar Consulta",
     description: "Marcar nova consulta ou sessão",
     icon: Calendar,
-    href: "#",
+    href: `/t/${slug}/appointments/new`,
     color: "bg-green-500"
   },
   {
     title: "Aplicar Escala",
     description: "Barthel, MRC ou indicadores customizados",
     icon: BarChart3,
-    href: "#",
+    href: `/t/${slug}/assessments/new`,
     color: "bg-purple-500"
   },
   {
     title: "Relatórios",
     description: "Visualizar dashboards e métricas",
     icon: Activity,
-    href: "#",
+    href: `/t/${slug}/reports`,
     color: "bg-orange-500"
   }
 ];
@@ -295,10 +302,12 @@ export default function TenantDashboard() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Comece cadastrando seu primeiro paciente ou agendando uma consulta.
                   </p>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Paciente
-                  </Button>
+                  <Link href={`/t/${slug}/patients/new`}>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Paciente
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
