@@ -351,4 +351,16 @@ router.post('/test-login', async (req, res) => {
   }
 });
 
+/**
+ * Test deployment endpoint
+ */
+router.get('/deployment-test', async (req, res) => {
+  res.json({
+    success: true,
+    message: 'Deployment test successful - auth system updated',
+    timestamp: new Date().toISOString(),
+    version: '2.0-auth-fixed'
+  });
+});
+
 export { router as publicRoutes };
