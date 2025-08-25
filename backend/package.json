@@ -8,7 +8,7 @@
     "build:old": "tsc",
     "postbuild": "echo 'Build completed'",
     "dev": "tsx watch src/server.ts",
-    "start": "npx prisma generate && tsx src/server-simple.ts",
+    "start": "npx prisma generate && tsx src/server-minimal.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
