@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { publicRoutes } from '@/routes/public';
+import { tenantAuthRoutes } from '@/routes/tenantAuth';
 
 dotenv.config();
 
@@ -9,7 +10,15 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Middleware básico
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://fisiohub.app',
+    'https://fisiohubtech.com.br',
+    process.env.FRONTEND_URL || 'http://localhost:3000'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Health check simples
@@ -23,6 +32,9 @@ app.get('/health', (req, res) => {
 
 // Rotas públicas (registration)
 app.use('/api', publicRoutes);
+
+// Rotas de autenticação
+app.use('/api', tenantAuthRoutes);
 
 // Catch all
 app.get('*', (req, res) => {
