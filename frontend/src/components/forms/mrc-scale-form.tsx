@@ -248,7 +248,7 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
               </div>
               {errors[muscle as keyof MrcScaleInput] && (
                 <p className="text-red-500 text-sm">
-                  {errors[muscle as keyof MrcScaleInput]?.message}
+                  {(errors[muscle as keyof MrcScaleInput] as any)?.message}
                 </p>
               )}
             </div>
