@@ -86,6 +86,41 @@ app.get('/api/debug-env', (req, res) => {
   });
 });
 
+// Force Prisma regeneration endpoint
+app.post('/api/regenerate-prisma', async (req, res) => {
+  try {
+    console.log('🔄 Regenerating Prisma Client...');
+    
+    // Recreate Prisma client with current DATABASE_URL
+    const newPrisma = new PrismaClient();
+    
+    // Test the connection
+    await newPrisma.$connect();
+    console.log('✅ New Prisma Client connected successfully');
+    
+    // Test a simple operation
+    const testResult = await newPrisma.$queryRaw`SELECT 1 as test`;
+    console.log('✅ Prisma Client test query successful:', testResult);
+    
+    await newPrisma.$disconnect();
+    
+    res.json({
+      success: true,
+      message: 'Prisma Client regenerated successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error regenerating Prisma:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to regenerate Prisma Client',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Database diagnostic endpoint
 app.get('/api/db-test', async (req, res) => {
   try {
