@@ -61,6 +61,10 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend funcionando!', timestamp: new Date().toISOString() });
 });
 
+app.post('/api/test', (req, res) => {
+  res.json({ message: 'POST funcionando!', body: req.body, timestamp: new Date().toISOString() });
+});
+
 // Alternative registration endpoint  
 app.post('/api/signup', (req, res) => {
   try {
