@@ -22,8 +22,8 @@ build/
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
 
-# Prisma
-backend/prisma/migrations/*/migration.sql
+# Prisma (dev files only)
+# backend/prisma/migrations/*/migration.sql
 
 # Logs
 *.log
@@ -64,8 +64,8 @@ Thumbs.db
 # Docker
 docker-compose.override.yml
 
-# Prisma
-backend/prisma/migrations/
+# Prisma (allow migrations in production)
+# backend/prisma/migrations/
 
 # Temporary files
 *.tmp
