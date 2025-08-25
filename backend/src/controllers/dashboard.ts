@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { prisma } from '@/lib/prisma';
 import { createError } from '@/middleware/errorHandler';
 import { AuthRequest } from '@/middleware/auth';
-import { AppointmentStatus } from '@fisiohub/shared';
+// import { AppointmentStatus } from '@fisiohub/shared';
 
 export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   const userId = req.user?.id;
@@ -34,8 +34,8 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   const nextWeekStart = new Date(thisWeekStart);
   nextWeekStart.setDate(thisWeekStart.getDate() + 7);
   
-  const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const nextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  // const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  // const nextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1);
   
   // Se for usuário master (CEO MaisFisio), mostrar dados agregados de todos os hospitais
   const isMasterUser = userSpecialty === 'CEO MaisFisio';

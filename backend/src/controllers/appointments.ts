@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { prisma } from '@/lib/prisma';
 import { createError } from '@/middleware/errorHandler';
 import { AuthRequest } from '@/middleware/auth';
-import { appointmentSchema, querySchema, AppointmentStatus } from '@fisiohub/shared';
+import { appointmentSchema, querySchema } from '@fisiohub/shared';
 
 export const createAppointment = async (req: AuthRequest, res: Response) => {
   const validatedData = appointmentSchema.parse(req.body);
