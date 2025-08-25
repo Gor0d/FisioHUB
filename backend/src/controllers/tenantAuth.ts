@@ -24,7 +24,7 @@ const createTenantSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string()
     .min(8, 'Senha deve ter pelo menos 8 caracteres')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Senha deve conter pelo menos uma letra minúscula, uma maiúscula e um número'),
+    .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Senha deve conter pelo menos uma letra minúscula, uma maiúscula e um número'),
   subdomain: z.string().optional(),
   plan: z.enum(['basic', 'professional', 'enterprise']).default('basic'),
   customDomain: z.string().optional()
