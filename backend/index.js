@@ -1,7 +1,12 @@
 // Load environment variables
-require('dotenv').config({
-  path: process.env.NODE_ENV === 'production' ? '.env.railway' : '.env'
-});
+require('dotenv').config();
+
+// Override DATABASE_URL if running on Railway
+if (process.env.PORT === '8080' || process.env.RAILWAY_ENVIRONMENT) {
+  // Force Railway DATABASE_URL
+  process.env.DATABASE_URL = "postgresql://postgres:UvSaOMuJOsmBOvfByQrljtFYCbhTZJhW@tramway.proxy.rlwy.net:53549/railway";
+  process.env.NODE_ENV = "production";
+}
 
 const express = require('express');
 const cors = require('cors');
