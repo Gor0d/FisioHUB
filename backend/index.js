@@ -23,6 +23,24 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    name: 'FisioHub API',
+    version: '1.0.0',
+    status: 'online',
+    endpoints: {
+      health: '/health',
+      register: 'POST /api/tenants/register',
+      tenantInfo: 'GET /api/tenants/:slug/info',
+      dbTest: '/api/db-test',
+      migrate: 'POST /api/migrate'
+    },
+    timestamp: new Date().toISOString(),
+    message: 'API funcionando com sucesso!'
+  });
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ 
