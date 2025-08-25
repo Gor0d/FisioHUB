@@ -41,6 +41,51 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Database diagnostic endpoint
+app.get('/api/db-test', async (req, res) => {
+  try {
+    console.log('=== DATABASE DIAGNOSTIC ===');
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('DATABASE_URL preview:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : 'undefined');
+    
+    // Test database connection
+    const result = await prisma.$queryRaw`SELECT 1 as test`;
+    console.log('Database query result:', result);
+    
+    // Test tenant count
+    const tenantCount = await prisma.tenant.count();
+    console.log('Total tenants in database:', tenantCount);
+    
+    res.json({
+      success: true,
+      message: 'Database connection successful!',
+      data: {
+        connected: true,
+        tenantCount,
+        testQuery: result,
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('=== DATABASE ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Database connection failed',
+      error: {
+        code: error.code,
+        message: error.message,
+        type: error.constructor.name
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 app.post('/api/test', (req, res) => {
   res.json({ 
     message: 'POST funcionando via index.js!', 
