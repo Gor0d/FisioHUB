@@ -4,6 +4,9 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3001;
 
+// Temporary in-memory storage for registered tenants
+const registeredTenants = {};
+
 // Middleware
 app.use(cors({
   origin: [
@@ -41,18 +44,34 @@ app.post('/api/test', (req, res) => {
   });
 });
 
-// Simple registration (no database for now)
+// Simple registration (with memory storage)
 app.post('/api/tenants/register', (req, res) => {
   try {
     console.log('Registration via index.js:', req.body);
+    const { name, slug, email, password } = req.body;
+    
+    // Store tenant in memory
+    registeredTenants[slug] = {
+      id: `temp-${Date.now()}`,
+      name,
+      slug,
+      email,
+      status: 'trial',
+      plan: 'professional',
+      createdAt: new Date().toISOString(),
+      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    };
+    
     res.json({
       success: true,
-      message: 'Registro funcionando via index.js - database em manutenção',
+      message: 'Conta criada com sucesso!',
       data: { 
-        test: true, 
-        body: req.body, 
-        timestamp: new Date().toISOString(),
-        note: 'Database será reconectado em breve'
+        tenant: registeredTenants[slug],
+        admin: {
+          email,
+          name: `Admin ${name}`
+        },
+        note: 'Conta temporária - database será reconectado em breve'
       }
     });
   } catch (error) {
@@ -61,12 +80,20 @@ app.post('/api/tenants/register', (req, res) => {
   }
 });
 
-// Tenant info - simulate availability check
+// Tenant info - check registered tenants or availability
 app.get('/api/tenants/:slug/info', (req, res) => {
   const slug = req.params.slug;
   
-  // Simulate that most slugs are available (return 404)
-  // Only a few test slugs are "taken"
+  // Check if tenant was registered (stored in memory)
+  if (registeredTenants[slug]) {
+    return res.json({
+      success: true,
+      message: 'Tenant encontrado',
+      ...registeredTenants[slug]
+    });
+  }
+  
+  // Check reserved slugs
   const takenSlugs = ['admin', 'test', 'api', 'www', 'fisiohub', 'demo'];
   
   if (takenSlugs.includes(slug)) {
