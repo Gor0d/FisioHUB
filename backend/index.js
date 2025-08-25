@@ -61,16 +61,31 @@ app.post('/api/tenants/register', (req, res) => {
   }
 });
 
-// Tenant info
+// Tenant info - simulate availability check
 app.get('/api/tenants/:slug/info', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Tenant info via index.js',
-    data: { 
-      slug: req.params.slug, 
-      test: true,
-      timestamp: new Date().toISOString() 
-    }
+  const slug = req.params.slug;
+  
+  // Simulate that most slugs are available (return 404)
+  // Only a few test slugs are "taken"
+  const takenSlugs = ['admin', 'test', 'api', 'www', 'fisiohub', 'demo'];
+  
+  if (takenSlugs.includes(slug)) {
+    return res.json({
+      success: true,
+      message: 'Slug já existe',
+      data: { 
+        slug: slug, 
+        taken: true,
+        timestamp: new Date().toISOString() 
+      }
+    });
+  }
+  
+  // Most slugs should return 404 (available)
+  return res.status(404).json({
+    success: false,
+    message: 'Tenant não encontrado (slug disponível)',
+    code: 'NOT_FOUND'
   });
 });
 
