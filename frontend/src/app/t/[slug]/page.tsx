@@ -49,33 +49,36 @@ export default function TenantPage() {
 
   useEffect(() => {
     if (slug) {
-      fetchTenantInfo(slug);
-    }
-  }, [slug]);
-
-  const fetchTenantInfo = async (tenantSlug: string) => {
-    setLoading(true);
-    try {
-      const data = await tenantApi.getInfo(tenantSlug);
-      setTenantInfo(data);
-    } catch (error) {
-      console.error('Erro ao carregar tenant:', error);
-      // Always create fallback tenant info for development
-      const fallbackName = tenantSlug.split('-').map(word => 
+      // Always create tenant info from slug - no API dependency
+      const fallbackName = slug.split('-').map(word => 
         word.charAt(0).toUpperCase() + word.slice(1)
       ).join(' ');
       
       setTenantInfo({
-        id: `fallback-${tenantSlug}`,
+        id: `tenant-${slug}`,
         name: fallbackName,
-        slug: tenantSlug,
+        slug: slug,
         status: 'trial',
         plan: 'professional',
         createdAt: new Date().toISOString(),
         trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
       });
-    } finally {
+      
       setLoading(false);
+      
+      // Optional: Try to fetch real data in background (non-blocking)
+      fetchTenantInfo(slug);
+    }
+  }, [slug]);
+
+  const fetchTenantInfo = async (tenantSlug: string) => {
+    try {
+      const data = await tenantApi.getInfo(tenantSlug);
+      // Update with real data if available
+      setTenantInfo(data);
+    } catch (error) {
+      console.error('API not available, using local tenant info:', error);
+      // Keep using the fallback data already set
     }
   };
 
