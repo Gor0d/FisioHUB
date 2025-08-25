@@ -219,7 +219,7 @@ export default function LandingPage() {
               <span className="text-primary"> Inteligente</span>
             </h1>
             
-            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+            <p className="text-xl text-gray-700 mb-8 leading-relaxed">
               Transforme seus dados de saúde em insights poderosos. 
               Monitore qualidade, performance e resultados clínicos em tempo real 
               com a plataforma mais completa do mercado.
