@@ -3,10 +3,10 @@ require('dotenv').config();
 
 // Override DATABASE_URL if running on Railway
 if (process.env.PORT === '8080' || process.env.RAILWAY_ENVIRONMENT) {
-  // Use Railway internal network URL (faster and more reliable)
-  process.env.DATABASE_URL = "postgresql://postgres:UvSaOMuJOsmBOvfByQrljtFYCbhTZJhW@postgres.railway.internal:5432/railway";
+  // Use Railway external URL (internal network seems not accessible)
+  process.env.DATABASE_URL = "postgresql://postgres:UvSaOMuJOsmBOvfByQrljtFYCbhTZJhW@tramway.proxy.rlwy.net:53549/railway";
   process.env.NODE_ENV = "production";
-  console.log('🚂 Railway detected - using Railway internal DATABASE_URL');
+  console.log('🚂 Railway detected - using Railway external DATABASE_URL');
 } else {
   console.log('💻 Local environment detected');
 }
