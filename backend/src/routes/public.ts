@@ -59,6 +59,37 @@ router.get('/test-basic', async (req, res) => {
 });
 
 /**
+ * Debug database structure
+ */
+router.get('/debug-db', async (req, res) => {
+  try {
+    const { prisma } = require('@/lib/prisma');
+    
+    // Check what tables exist
+    const tables = await prisma.$queryRaw`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+      ORDER BY table_name;
+    `;
+    
+    res.json({
+      success: true,
+      message: 'Database structure',
+      tables: tables
+    });
+    
+  } catch (error: any) {
+    console.error('Debug DB error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Debug failed',
+      error: error.message
+    });
+  }
+});
+
+/**
  * Test database connection and create test data if needed
  */
 router.get('/test-db', async (req, res) => {
