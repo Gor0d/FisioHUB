@@ -153,20 +153,48 @@ export const registerTenant = async (req: Request, res: Response) => {
   try {
     console.log('registerTenant called with body:', JSON.stringify(req.body, null, 2));
     
-    // TEMPORARY: Just return success without database operations
-    const { name, slug, email } = req.body;
+    const validatedData = createTenantSchema.parse(req.body);
+    
+    // Direct Prisma call for tenant creation
+    const { prisma } = require('@/lib/prisma');
+    
+    // Check if slug exists
+    const existingTenant = await prisma.tenant.findFirst({
+      where: { slug: validatedData.slug }
+    });
+    
+    if (existingTenant) {
+      return res.status(400).json({
+        success: false,
+        message: 'Este identificador já está em uso'
+      });
+    }
+    
+    // Create tenant
+    const tenant = await prisma.tenant.create({
+      data: {
+        name: validatedData.name,
+        slug: validatedData.slug,
+        email: validatedData.email,
+        plan: validatedData.plan || 'basic',
+        status: 'trial',
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      }
+    });
+    
+    console.log(`✅ Novo tenant criado: ${tenant.name} (${tenant.slug})`);
     
     res.status(201).json({
       success: true,
-      message: 'Tenant criado com sucesso! (modo teste)',
+      message: 'Tenant criado com sucesso!',
       data: {
         tenant: {
-          id: 'test-' + Date.now(),
-          name: name || 'Teste',
-          slug: slug || 'teste-' + Date.now(),
-          status: 'trial',
-          plan: 'basic',
-          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          status: tenant.status,
+          plan: tenant.plan,
+          trialEndsAt: tenant.trialEndsAt
         }
       }
     });
