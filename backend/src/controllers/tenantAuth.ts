@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { tenantAuth } from '@/utils/tenantAuth';
+import { simpleTenantAuth } from '@/utils/simpleTenantAuth';
 import { TenantService } from '@/services/tenantService';
 
 const tenantService = new TenantService();
@@ -39,9 +40,13 @@ const createTenantSchema = z.object({
  */
 export const loginTenant = async (req: Request, res: Response) => {
   try {
+    console.log('=== LOGIN TENANT START ===');
+    console.log('Body received:', JSON.stringify(req.body, null, 2));
+    
     const validatedData = loginSchema.parse(req.body);
     
-    const authResult = await tenantAuth.authenticateUser(validatedData);
+    // Use simplified auth system that matches our current schema
+    const authResult = await simpleTenantAuth.authenticateUser(validatedData);
     
     // Log da autenticação bem-sucedida
     console.log(`✅ Login: ${authResult.user.email} em ${authResult.tenant.name} (${authResult.tenant.slug})`);
@@ -53,7 +58,8 @@ export const loginTenant = async (req: Request, res: Response) => {
     });
     
   } catch (error: any) {
-    console.error('Erro no login:', error);
+    console.error('=== LOGIN ERROR ===');
+    console.error('Error details:', error);
     
     if (error.name === 'ZodError') {
       return res.status(400).json({
@@ -85,7 +91,8 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
   try {
     const validatedData = refreshTokenSchema.parse(req.body);
     
-    const tokens = await tenantAuth.refreshToken(
+    // Use simplified auth system
+    const tokens = await simpleTenantAuth.refreshToken(
       validatedData.refreshToken,
       validatedData.tenantSlug
     );
@@ -154,29 +161,76 @@ export const registerTenant = async (req: Request, res: Response) => {
     console.log('=== REGISTER TENANT START ===');
     console.log('Body received:', JSON.stringify(req.body, null, 2));
     
-    // For now, accept any slug without validation
-    const { name, slug, email } = req.body;
+    const validatedData = createTenantSchema.parse(req.body);
+    const { name, slug, email, password } = validatedData;
     
-    // Add random suffix to make slug unique
-    const uniqueSlug = slug ? `${slug}-${Date.now()}` : `teste-${Date.now()}`;
+    // Import required modules
+    const { prisma } = require('@/lib/prisma');
+    const bcrypt = require('bcryptjs');
+    
+    // Check if slug is already taken
+    const existingTenant = await prisma.tenant.findFirst({
+      where: { slug }
+    });
+    
+    if (existingTenant) {
+      return res.status(409).json({
+        success: false,
+        message: 'Este identificador já está em uso',
+        code: 'DUPLICATE_SLUG'
+      });
+    }
+    
+    // Create tenant
+    const tenant = await prisma.tenant.create({
+      data: {
+        name,
+        slug,
+        email,
+        status: 'trial',
+        plan: 'basic',
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      }
+    });
+    
+    // Hash password and create admin user
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const adminUser = await prisma.globalUser.create({
+      data: {
+        email,
+        name: `Admin ${name}`,
+        password: hashedPassword,
+        role: 'admin',
+        tenantId: tenant.id
+      }
+    });
+    
+    console.log(`✅ Tenant criado: ${tenant.name} (${tenant.slug})`);
+    console.log(`✅ Admin criado: ${adminUser.email}`);
     
     res.status(201).json({
       success: true,
-      message: 'Tenant criado com sucesso! (modo teste)',
+      message: 'Tenant criado com sucesso!',
       data: {
         tenant: {
-          id: 'test-' + Date.now(),
-          name: name || 'Teste',
-          slug: uniqueSlug,
-          status: 'trial',
-          plan: 'basic',
-          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          status: tenant.status,
+          plan: tenant.plan,
+          trialEndsAt: tenant.trialEndsAt
+        },
+        admin: {
+          id: adminUser.id,
+          email: adminUser.email,
+          name: adminUser.name
         }
       }
     });
     
   } catch (error: any) {
-    console.error('Erro ao criar tenant:', error);
+    console.error('=== REGISTER ERROR ===');
+    console.error('Error details:', error);
     
     if (error.name === 'ZodError') {
       return res.status(400).json({
@@ -219,31 +273,65 @@ export const getTenantInfo = async (req: Request, res: Response) => {
     console.log('=== GET TENANT INFO START ===');
     console.log('Slug requested:', slug);
     
+    const { prisma } = require('@/lib/prisma');
+    
     // Check if this is being called from success page (after registration)
     const referer = req.headers.referer;
     const isFromSuccessPage = referer && referer.includes('/register/success');
     
     if (isFromSuccessPage) {
-      // Return mock data for success page
-      console.log('Returning mock data for success page');
-      res.json({
-        success: true,
-        data: {
-          id: 'success-' + Date.now(),
-          name: `Tenant ${slug}`,
-          slug: slug,
-          status: 'trial',
-          plan: 'basic',
-          createdAt: new Date().toISOString()
-        }
+      // Try to return real tenant data for success page
+      const tenant = await prisma.tenant.findFirst({
+        where: { slug }
       });
+      
+      if (tenant) {
+        console.log('Returning real tenant data for success page');
+        res.json({
+          success: true,
+          data: {
+            id: tenant.id,
+            name: tenant.name,
+            slug: tenant.slug,
+            status: tenant.status,
+            plan: tenant.plan,
+            createdAt: tenant.createdAt
+          }
+        });
+      } else {
+        // Fallback to mock data if tenant not found
+        console.log('Returning mock data for success page (tenant not found)');
+        res.json({
+          success: true,
+          data: {
+            id: 'success-' + Date.now(),
+            name: `Tenant ${slug}`,
+            slug: slug,
+            status: 'trial',
+            plan: 'basic',
+            createdAt: new Date().toISOString()
+          }
+        });
+      }
     } else {
-      // Return 404 for slug availability checks during registration
-      console.log('Returning 404 for slug availability check');
-      res.status(404).json({
-        success: false,
-        message: 'Tenant não encontrado'
+      // For slug availability checks, actually check if tenant exists
+      const tenant = await prisma.tenant.findFirst({
+        where: { slug }
       });
+      
+      if (tenant) {
+        console.log('Slug already exists, returning 409');
+        res.status(409).json({
+          success: false,
+          message: 'Este identificador já está em uso'
+        });
+      } else {
+        console.log('Slug available, returning 404');
+        res.status(404).json({
+          success: false,
+          message: 'Tenant não encontrado'
+        });
+      }
     }
     
   } catch (error: any) {
@@ -313,7 +401,8 @@ export const validateToken = async (req: Request, res: Response) => {
       throw createError('Token e tenantSlug são obrigatórios', 400);
     }
     
-    const payload = tenantAuth.verifyToken(token, tenantSlug);
+    // Use simplified auth system
+    const payload = simpleTenantAuth.verifyToken(token, tenantSlug);
     
     res.json({
       success: true,
@@ -322,8 +411,9 @@ export const validateToken = async (req: Request, res: Response) => {
         valid: true,
         userId: payload.userId,
         role: payload.role,
-        permissions: payload.permissions,
-        expiresAt: new Date(payload.exp! * 1000) // Convert unix timestamp to Date
+        email: payload.email,
+        tenantId: payload.tenantId,
+        tenantSlug: payload.tenantSlug
       }
     });
     
