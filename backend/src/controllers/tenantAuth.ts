@@ -214,48 +214,16 @@ export const getTenantInfo = async (req: Request, res: Response) => {
     console.log('=== GET TENANT INFO START ===');
     console.log('Slug requested:', slug);
     
-    // Direct Prisma call like in registerTenant
-    const { prisma } = require('@/lib/prisma');
-    
-    // First check total tenant count
-    const totalCount = await prisma.tenant.count();
-    console.log('Total tenants in database:', totalCount);
-    
-    // List all tenants for debugging
-    const allTenants = await prisma.tenant.findMany({
-      select: { id: true, name: true, slug: true, status: true }
-    });
-    console.log('All tenants in database:', JSON.stringify(allTenants, null, 2));
-    
-    const tenant = await prisma.tenant.findFirst({
-      where: {
-        OR: [
-          { slug },
-          { subdomain: slug }
-        ]
-      }
-    });
-    
-    console.log('Tenant search result:', tenant ? JSON.stringify(tenant, null, 2) : 'NOT FOUND');
-    
-    if (!tenant) {
-      console.log('Returning 404 - tenant not found');
-      return res.status(404).json({
-        success: false,
-        message: 'Tenant não encontrado'
-      });
-    }
-    
-    console.log('Returning tenant info successfully');
+    // ULTRA SIMPLE TEST - just return mock data
     res.json({
       success: true,
       data: {
-        id: tenant.id,
-        name: tenant.name,
-        slug: tenant.slug,
-        status: tenant.status,
-        plan: tenant.plan,
-        createdAt: tenant.createdAt
+        id: 'test-id',
+        name: `Tenant ${slug}`,
+        slug: slug,
+        status: 'active',
+        plan: 'basic',
+        createdAt: new Date().toISOString()
       }
     });
     
