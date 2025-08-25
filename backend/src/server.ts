@@ -32,6 +32,8 @@ app.use(cors({
     'http://localhost:3002',
     'http://localhost:3003',
     'http://localhost:3004',
+    'https://fisiohub.app',
+    'https://fisiohubtech.com.br',
     process.env.FRONTEND_URL || 'http://localhost:3000'
   ],
   credentials: true
