@@ -106,6 +106,8 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
       // Converter todos os valores numéricos para garantir que sejam números
       const numericData = {
         patientId: selectedPatient,
+        score: totalScore,
+        date: new Date().toISOString(),
         type: evaluationType,
         evaluationDate: new Date().toISOString(),
         shoulderAbduction: Number(scores.shoulderAbduction || 0),
