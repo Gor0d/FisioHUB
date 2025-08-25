@@ -22,7 +22,23 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Initialize Prisma
-const prisma = new PrismaClient();
+console.log('🔄 Initializing Prisma Client with DATABASE_URL...');
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+});
+
+// Test Prisma connection on startup
+prisma.$connect()
+  .then(() => {
+    console.log('✅ Prisma Client connected successfully');
+  })
+  .catch((error) => {
+    console.error('❌ Prisma Client connection failed:', error);
+  });
 
 // Temporary in-memory storage for registered tenants (fallback)
 const registeredTenants = {};
