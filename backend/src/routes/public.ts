@@ -39,6 +39,26 @@ router.get('/migrate', async (req, res) => {
 });
 
 /**
+ * Test basic endpoint
+ */
+router.get('/test-basic', async (req, res) => {
+  try {
+    res.json({ 
+      success: true, 
+      message: 'Basic endpoint working',
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV 
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      message: 'Basic endpoint failed', 
+      error: error.message 
+    });
+  }
+});
+
+/**
  * Test database connection
  */
 router.get('/test-db', async (req, res) => {

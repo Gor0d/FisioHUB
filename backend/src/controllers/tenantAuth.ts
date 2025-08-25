@@ -154,62 +154,18 @@ export const registerTenant = async (req: Request, res: Response) => {
     console.log('=== REGISTER TENANT START ===');
     console.log('Body received:', JSON.stringify(req.body, null, 2));
     
-    // First, let's test a simple database operation
-    const { prisma } = require('@/lib/prisma');
-    const currentCount = await prisma.tenant.count();
-    console.log('Current tenant count:', currentCount);
-    
-    const validatedData = createTenantSchema.parse(req.body);
-    console.log('Validated data:', JSON.stringify(validatedData, null, 2));
-    
-    // Check if slug exists
-    console.log('Checking for existing tenant with slug:', validatedData.slug);
-    const existingTenant = await prisma.tenant.findFirst({
-      where: { slug: validatedData.slug }
-    });
-    console.log('Existing tenant check result:', existingTenant ? 'FOUND' : 'NOT FOUND');
-    
-    if (existingTenant) {
-      console.log('Returning duplicate error');
-      return res.status(400).json({
-        success: false,
-        message: 'Este identificador já está em uso'
-      });
-    }
-    
-    // Create tenant
-    console.log('Creating new tenant...');
-    const tenantData = {
-      name: validatedData.name,
-      slug: validatedData.slug,
-      email: validatedData.email,
-      plan: validatedData.plan || 'basic',
-      status: 'trial',
-      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-    };
-    console.log('Tenant data to create:', JSON.stringify(tenantData, null, 2));
-    
-    const tenant = await prisma.tenant.create({
-      data: tenantData
-    });
-    
-    console.log('✅ Tenant created successfully:', JSON.stringify(tenant, null, 2));
-    
-    // Verify it was actually saved
-    const newCount = await prisma.tenant.count();
-    console.log('New tenant count after creation:', newCount);
-    
+    // ULTRA SIMPLE TEST - just return success without any operations
     res.status(201).json({
       success: true,
-      message: 'Tenant criado com sucesso!',
+      message: 'Tenant criado com sucesso! (ultra simple mode)',
       data: {
         tenant: {
-          id: tenant.id,
-          name: tenant.name,
-          slug: tenant.slug,
-          status: tenant.status,
-          plan: tenant.plan,
-          trialEndsAt: tenant.trialEndsAt
+          id: 'test-' + Date.now(),
+          name: req.body.name || 'Teste',
+          slug: req.body.slug || 'teste',
+          status: 'trial',
+          plan: 'basic',
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
         }
       }
     });
