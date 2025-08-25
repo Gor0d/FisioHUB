@@ -118,6 +118,74 @@ app.post('/api/test', (req, res) => {
   });
 });
 
+// Migration endpoint to create tables manually
+app.post('/api/migrate', async (req, res) => {
+  try {
+    console.log('🚀 Starting manual migration...');
+    
+    // Create tenant table
+    console.log('📊 Creating tenant table...');
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS tenant (
+        id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        slug VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        status VARCHAR(50) DEFAULT 'trial',
+        plan VARCHAR(50) DEFAULT 'professional',
+        "createdAt" TIMESTAMP DEFAULT NOW(),
+        "updatedAt" TIMESTAMP DEFAULT NOW(),
+        "trialEndsAt" TIMESTAMP
+      )
+    `;
+    console.log('✅ Tenant table created');
+    
+    // Create globalUser table
+    console.log('📊 Creating globalUser table...');
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "globalUser" (
+        id VARCHAR(255) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'admin',
+        "tenantId" VARCHAR(255),
+        "createdAt" TIMESTAMP DEFAULT NOW(),
+        "updatedAt" TIMESTAMP DEFAULT NOW(),
+        FOREIGN KEY ("tenantId") REFERENCES tenant(id)
+      )
+    `;
+    console.log('✅ GlobalUser table created');
+    
+    // Verify tables were created
+    const tablesCheck = await prisma.$queryRaw`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('tenant', 'globalUser')
+    `;
+    console.log('✅ Tables verification:', tablesCheck);
+    
+    res.json({
+      success: true,
+      message: 'Migration completed successfully!',
+      data: {
+        tablesCreated: tablesCheck,
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('🚨 MIGRATION ERROR:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Migration failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Registration with real database
 app.post('/api/tenants/register', async (req, res) => {
   try {
@@ -153,8 +221,10 @@ app.post('/api/tenants/register', async (req, res) => {
       
       // Create tenant in database
       console.log('🔍 Creating tenant in database...');
+      const tenantId = `tenant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const tenant = await prisma.tenant.create({
         data: {
+          id: tenantId,
           name,
           slug,
           email,
@@ -168,8 +238,10 @@ app.post('/api/tenants/register', async (req, res) => {
       // Hash password and create admin user
       console.log('🔍 Creating admin user...');
       const hashedPassword = await bcrypt.hash(password, 10);
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const adminUser = await prisma.globalUser.create({
         data: {
+          id: userId,
           email,
           name: `Admin ${name}`,
           password: hashedPassword,
