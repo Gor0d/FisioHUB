@@ -226,7 +226,7 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
                       type="radio"
                       name={muscle}
                       value={option.value}
-                      checked={scores[muscle] === option.value}
+                      checked={scores[muscle as keyof typeof scores] === option.value}
                       onChange={() => handleScoreChange(muscle, option.value)}
                       className="w-4 h-4 text-blue-600"
                     />
