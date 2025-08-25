@@ -43,7 +43,9 @@
       "Bash(grep:*)",
       "Bash(nslookup:*)",
       "WebFetch(domain:fisiohub.app)",
-      "WebFetch(domain:api.fisiohub.app)"
+      "WebFetch(domain:api.fisiohub.app)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)"
     ],
     "deny": [],
     "ask": []
