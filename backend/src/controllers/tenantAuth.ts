@@ -1,10 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { tenantAuth } from '@/utils/tenantAuth';
 import { simpleTenantAuth } from '@/utils/simpleTenantAuth';
-import { TenantService } from '@/services/tenantService';
-
-const tenantService = new TenantService();
 import { createError } from '@/middleware/errorHandler';
 
 // Schemas de validação
@@ -38,7 +34,7 @@ const createTenantSchema = z.object({
  * POST /api/auth/login
  * Autenticar usuário em um tenant
  */
-export const loginTenant = async (req: Request, res: Response) => {
+export const loginTenant = async (req: Request, res: Response): Promise<Response> => {
   try {
     console.log('=== LOGIN TENANT START ===');
     console.log('Body received:', JSON.stringify(req.body, null, 2));
@@ -51,7 +47,7 @@ export const loginTenant = async (req: Request, res: Response) => {
     // Log da autenticação bem-sucedida
     console.log(`✅ Login: ${authResult.user.email} em ${authResult.tenant.name} (${authResult.tenant.slug})`);
     
-    res.json({
+    return res.json({
       success: true,
       message: 'Autenticado com sucesso',
       data: authResult
@@ -76,7 +72,7 @@ export const loginTenant = async (req: Request, res: Response) => {
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
     });
@@ -87,7 +83,7 @@ export const loginTenant = async (req: Request, res: Response) => {
  * POST /api/auth/refresh
  * Renovar token de acesso
  */
-export const refreshAccessToken = async (req: Request, res: Response) => {
+export const refreshAccessToken = async (req: Request, res: Response): Promise<Response> => {
   try {
     const validatedData = refreshTokenSchema.parse(req.body);
     
@@ -97,7 +93,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       validatedData.tenantSlug
     );
     
-    res.json({
+    return res.json({
       success: true,
       message: 'Token renovado com sucesso',
       data: tokens
@@ -121,7 +117,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       });
     }
     
-    res.status(401).json({
+    return res.status(401).json({
       success: false,
       message: 'Erro na renovação do token'
     });
@@ -156,7 +152,7 @@ export const logoutTenant = async (req: Request, res: Response) => {
  * POST /api/tenants/register
  * Cadastrar novo tenant (público)
  */
-export const registerTenant = async (req: Request, res: Response) => {
+export const registerTenant = async (req: Request, res: Response): Promise<Response> => {
   try {
     console.log('=== REGISTER TENANT START ===');
     console.log('Body received:', JSON.stringify(req.body, null, 2));
@@ -208,7 +204,7 @@ export const registerTenant = async (req: Request, res: Response) => {
     console.log(`✅ Tenant criado: ${tenant.name} (${tenant.slug})`);
     console.log(`✅ Admin criado: ${adminUser.email}`);
     
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Tenant criado com sucesso!',
       data: {
@@ -256,7 +252,7 @@ export const registerTenant = async (req: Request, res: Response) => {
       });
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
     });
@@ -267,7 +263,7 @@ export const registerTenant = async (req: Request, res: Response) => {
  * GET /api/tenants/:slug/info
  * Obter informações públicas do tenant
  */
-export const getTenantInfo = async (req: Request, res: Response) => {
+export const getTenantInfo = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { slug } = req.params;
     console.log('=== GET TENANT INFO START ===');
@@ -287,7 +283,7 @@ export const getTenantInfo = async (req: Request, res: Response) => {
       
       if (tenant) {
         console.log('Returning real tenant data for success page');
-        res.json({
+        return res.json({
           success: true,
           data: {
             id: tenant.id,
@@ -301,7 +297,7 @@ export const getTenantInfo = async (req: Request, res: Response) => {
       } else {
         // Fallback to mock data if tenant not found
         console.log('Returning mock data for success page (tenant not found)');
-        res.json({
+        return res.json({
           success: true,
           data: {
             id: 'success-' + Date.now(),
@@ -321,13 +317,13 @@ export const getTenantInfo = async (req: Request, res: Response) => {
       
       if (tenant) {
         console.log('Slug already exists, returning 409');
-        res.status(409).json({
+        return res.status(409).json({
           success: false,
           message: 'Este identificador já está em uso'
         });
       } else {
         console.log('Slug available, returning 404');
-        res.status(404).json({
+        return res.status(404).json({
           success: false,
           message: 'Tenant não encontrado'
         });
@@ -338,7 +334,7 @@ export const getTenantInfo = async (req: Request, res: Response) => {
     console.error('=== GET TENANT INFO ERROR ===');
     console.error('Error details:', error);
     
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
     });
@@ -393,7 +389,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
  * POST /api/auth/validate
  * Validar token sem renovar (útil para verificações rápidas)
  */
-export const validateToken = async (req: Request, res: Response) => {
+export const validateToken = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { token, tenantSlug } = req.body;
     
@@ -404,7 +400,7 @@ export const validateToken = async (req: Request, res: Response) => {
     // Use simplified auth system
     const payload = simpleTenantAuth.verifyToken(token, tenantSlug);
     
-    res.json({
+    return res.json({
       success: true,
       message: 'Token válido',
       data: {
@@ -420,7 +416,7 @@ export const validateToken = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Erro na validação de token:', error);
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         valid: false,

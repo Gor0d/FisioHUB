@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import {
   registerTenant,
   getTenantInfo
@@ -92,7 +92,7 @@ router.get('/debug-db', async (req, res) => {
 /**
  * Test database connection and create test data if needed
  */
-router.get('/test-db', async (req, res) => {
+router.get('/test-db', async (req: Request, res: Response) => {
   try {
     const { prisma } = require('@/lib/prisma');
     const bcrypt = require('bcryptjs');
@@ -134,7 +134,7 @@ router.get('/test-db', async (req, res) => {
       count = 1;
     }
     
-    res.json({ 
+    return res.json({ 
       success: true, 
       message: 'Database connected', 
       tenantCount: count,
@@ -154,7 +154,7 @@ router.get('/test-db', async (req, res) => {
     });
   } catch (error: any) {
     console.error('Database test error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       message: 'Database connection failed', 
       error: error.message 

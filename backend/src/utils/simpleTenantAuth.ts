@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+import * as jwt from 'jsonwebtoken';
+import * as bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { createError } from '@/middleware/errorHandler';
 
