@@ -1,8 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { publicRoutes } from '@/routes/public';
-import { tenantAuthRoutes } from '@/routes/tenantAuth';
+import { registerTenant, getTenantInfo } from '@/controllers/tenantAuth';
 
 dotenv.config();
 
@@ -30,11 +29,14 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Rotas públicas (registration)
-app.use('/api', publicRoutes);
+// Rotas essenciais apenas
+app.post('/api/tenants/register', registerTenant);
+app.get('/api/tenants/:slug/info', getTenantInfo);
 
-// Rotas de autenticação
-app.use('/api', tenantAuthRoutes);
+// Test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Backend funcionando!', timestamp: new Date().toISOString() });
+});
 
 // Catch all
 app.get('*', (req, res) => {
