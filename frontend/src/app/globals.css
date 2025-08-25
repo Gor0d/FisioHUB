@@ -38,7 +38,7 @@
     --secondary: 218 11% 30%;
     --secondary-foreground: 213 31% 91%;
     --muted: 217 18% 17%;
-    --muted-foreground: 215.4 13.8% 71%;
+    --muted-foreground: 215.4 13.8% 85%;
     --accent: 218 11% 24%;
     --accent-foreground: 213 31% 91%;
     --destructive: 0 63% 31%;
@@ -78,7 +78,7 @@
   }
   
   .dark .text-muted-foreground {
-    color: hsl(215.4 13.8% 71%) !important;
+    color: hsl(215.4 13.8% 85%) !important;
   }
   
   .dark .border-border {
