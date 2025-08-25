@@ -242,7 +242,17 @@ export const getTenantInfo = async (req: Request, res: Response) => {
     const { slug } = req.params;
     console.log('getTenantInfo called with slug:', slug);
     
-    const tenant = await tenantService.findTenantBySlug(slug);
+    // Direct Prisma call like in registerTenant
+    const { prisma } = require('@/lib/prisma');
+    
+    const tenant = await prisma.tenant.findFirst({
+      where: {
+        OR: [
+          { slug },
+          { subdomain: slug }
+        ]
+      }
+    });
     
     if (!tenant) {
       return res.status(404).json({
