@@ -205,6 +205,6 @@ cd frontend && npm run dev
 - **TypeScript**: Compilação 100% limpa após refatoração
 
 ---
-**Última atualização**: 2025-08-25 por Claude Code
-**Responsável técnico**: Sistema desenvolvido com Claude Code
+**Última atualização**: 2025-08-25 por Emerson Guimarães
+**Responsável técnico**: Emerson Guimarães
 **Status geral**: 🟢 PRODUÇÃO FUNCIONANDO - Pendente domain config
