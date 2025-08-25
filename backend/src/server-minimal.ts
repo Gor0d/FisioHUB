@@ -61,6 +61,21 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend funcionando!', timestamp: new Date().toISOString() });
 });
 
+// Alternative registration endpoint  
+app.post('/api/signup', (req, res) => {
+  try {
+    console.log('Signup request received:', req.body);
+    res.json({
+      success: true,
+      message: 'Signup endpoint funcionando!',
+      data: { test: true, body: req.body, timestamp: new Date().toISOString() }
+    });
+  } catch (error) {
+    console.error('Error in signup:', error);
+    res.status(500).json({ success: false, message: 'Signup error: ' + error.message });
+  }
+});
+
 // Catch all
 app.get('*', (req, res) => {
   res.status(404).json({ error: 'Rota não encontrada' });
