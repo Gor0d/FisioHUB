@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { tenantAuth } from '@/utils/tenantAuth';
-import { tenantService } from '@/services/tenantService-simple';
+import { TenantService } from '@/services/tenantService';
+
+const tenantService = new TenantService();
 import { createError } from '@/middleware/errorHandler';
 
 // Schemas de validação
