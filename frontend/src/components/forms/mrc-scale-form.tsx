@@ -301,10 +301,10 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
                     <div className="h-2 bg-gray-200 rounded mb-1">
                       <div
                         className="h-full bg-blue-500 rounded transition-all duration-300"
-                        style={{ width: `${(scores[muscle] / 5) * 100}%` }}
+                        style={{ width: `${(scores[muscle as keyof typeof scores] / 5) * 100}%` }}
                       />
                     </div>
-                    <div className="text-xs text-gray-600">{scores[muscle]}/5</div>
+                    <div className="text-xs text-gray-600">{scores[muscle as keyof typeof scores]}/5</div>
                     <div className="text-xs text-gray-500 truncate">{label}</div>
                   </div>
                 ))}
