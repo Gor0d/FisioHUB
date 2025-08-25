@@ -44,7 +44,7 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
   const [patients, setPatients] = useState<Patient[]>([])
   const [selectedPatient, setSelectedPatient] = useState(patientId || '')
   const [evaluationType, setEvaluationType] = useState<'ENTRADA' | 'SAIDA'>('ENTRADA')
-  const [scores, setScores] = useState<Record<string, number>>({
+  const [scores, setScores] = useState({
     shoulderAbduction: 0,
     elbowFlexion: 0,
     wristExtension: 0,
@@ -54,8 +54,7 @@ export function MrcScaleForm({ patientId, evolutionId, onSubmit, initialData }: 
     neckFlexion: 0,
     trunkFlexion: 0,
     shoulderAdduction: 0,
-    elbowExtension: 0,
-    ...initialData
+    elbowExtension: 0
   })
 
   const { handleSubmit, formState: { errors } } = useForm({
