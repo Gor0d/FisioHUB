@@ -151,19 +151,26 @@ export const logoutTenant = async (req: Request, res: Response) => {
  */
 export const registerTenant = async (req: Request, res: Response) => {
   try {
-    console.log('registerTenant called with body:', JSON.stringify(req.body, null, 2));
+    console.log('=== REGISTER TENANT START ===');
+    console.log('Body received:', JSON.stringify(req.body, null, 2));
+    
+    // First, let's test a simple database operation
+    const { prisma } = require('@/lib/prisma');
+    const currentCount = await prisma.tenant.count();
+    console.log('Current tenant count:', currentCount);
     
     const validatedData = createTenantSchema.parse(req.body);
-    
-    // Direct Prisma call for tenant creation
-    const { prisma } = require('@/lib/prisma');
+    console.log('Validated data:', JSON.stringify(validatedData, null, 2));
     
     // Check if slug exists
+    console.log('Checking for existing tenant with slug:', validatedData.slug);
     const existingTenant = await prisma.tenant.findFirst({
       where: { slug: validatedData.slug }
     });
+    console.log('Existing tenant check result:', existingTenant ? 'FOUND' : 'NOT FOUND');
     
     if (existingTenant) {
+      console.log('Returning duplicate error');
       return res.status(400).json({
         success: false,
         message: 'Este identificador já está em uso'
@@ -171,18 +178,26 @@ export const registerTenant = async (req: Request, res: Response) => {
     }
     
     // Create tenant
+    console.log('Creating new tenant...');
+    const tenantData = {
+      name: validatedData.name,
+      slug: validatedData.slug,
+      email: validatedData.email,
+      plan: validatedData.plan || 'basic',
+      status: 'trial',
+      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+    };
+    console.log('Tenant data to create:', JSON.stringify(tenantData, null, 2));
+    
     const tenant = await prisma.tenant.create({
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-        email: validatedData.email,
-        plan: validatedData.plan || 'basic',
-        status: 'trial',
-        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-      }
+      data: tenantData
     });
     
-    console.log(`✅ Novo tenant criado: ${tenant.name} (${tenant.slug})`);
+    console.log('✅ Tenant created successfully:', JSON.stringify(tenant, null, 2));
+    
+    // Verify it was actually saved
+    const newCount = await prisma.tenant.count();
+    console.log('New tenant count after creation:', newCount);
     
     res.status(201).json({
       success: true,
@@ -240,10 +255,21 @@ export const registerTenant = async (req: Request, res: Response) => {
 export const getTenantInfo = async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
-    console.log('getTenantInfo called with slug:', slug);
+    console.log('=== GET TENANT INFO START ===');
+    console.log('Slug requested:', slug);
     
     // Direct Prisma call like in registerTenant
     const { prisma } = require('@/lib/prisma');
+    
+    // First check total tenant count
+    const totalCount = await prisma.tenant.count();
+    console.log('Total tenants in database:', totalCount);
+    
+    // List all tenants for debugging
+    const allTenants = await prisma.tenant.findMany({
+      select: { id: true, name: true, slug: true, status: true }
+    });
+    console.log('All tenants in database:', JSON.stringify(allTenants, null, 2));
     
     const tenant = await prisma.tenant.findFirst({
       where: {
@@ -254,13 +280,17 @@ export const getTenantInfo = async (req: Request, res: Response) => {
       }
     });
     
+    console.log('Tenant search result:', tenant ? JSON.stringify(tenant, null, 2) : 'NOT FOUND');
+    
     if (!tenant) {
+      console.log('Returning 404 - tenant not found');
       return res.status(404).json({
         success: false,
         message: 'Tenant não encontrado'
       });
     }
     
+    console.log('Returning tenant info successfully');
     res.json({
       success: true,
       data: {
@@ -274,7 +304,8 @@ export const getTenantInfo = async (req: Request, res: Response) => {
     });
     
   } catch (error: any) {
-    console.error('Erro ao buscar info do tenant:', error);
+    console.error('=== GET TENANT INFO ERROR ===');
+    console.error('Error details:', error);
     
     res.status(500).json({
       success: false,
