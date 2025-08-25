@@ -57,7 +57,7 @@ app.get('/api/db-test', async (req, res) => {
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public' 
-      AND table_name IN ('tenant', 'globalUser', 'User')
+      AND table_name IN ('tenants', 'global_users', 'tenant', 'globalUser')
     `;
     console.log('Tables found:', tableCheck);
     
@@ -123,36 +123,51 @@ app.post('/api/migrate', async (req, res) => {
   try {
     console.log('🚀 Starting manual migration...');
     
-    // Create tenant table
-    console.log('📊 Creating tenant table...');
+    // Drop existing incorrect tables first
+    console.log('🗑️ Dropping incorrect tables...');
+    await prisma.$executeRaw`DROP TABLE IF EXISTS "globalUser" CASCADE`;
+    await prisma.$executeRaw`DROP TABLE IF EXISTS tenant CASCADE`;
+    console.log('✅ Old tables dropped');
+    
+    // Create tenants table (correct name - plural)
+    console.log('📊 Creating tenants table...');
     await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS tenant (
+      CREATE TABLE IF NOT EXISTS tenants (
         id VARCHAR(255) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         slug VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255) NOT NULL,
         status VARCHAR(50) DEFAULT 'trial',
-        plan VARCHAR(50) DEFAULT 'professional',
+        plan VARCHAR(50) DEFAULT 'basic',
+        "subdomain" VARCHAR(255),
+        "customDomain" VARCHAR(255),
+        "logoUrl" VARCHAR(255),
+        "billingEmail" VARCHAR(255),
+        "trialEndsAt" TIMESTAMP,
+        "isActive" BOOLEAN DEFAULT true,
+        "lastActivityAt" TIMESTAMP DEFAULT NOW(),
+        "metadata" JSONB,
         "createdAt" TIMESTAMP DEFAULT NOW(),
-        "updatedAt" TIMESTAMP DEFAULT NOW(),
-        "trialEndsAt" TIMESTAMP
+        "updatedAt" TIMESTAMP DEFAULT NOW()
       )
     `;
-    console.log('✅ Tenant table created');
+    console.log('✅ Tenants table created');
     
-    // Create globalUser table
-    console.log('📊 Creating globalUser table...');
+    // Create global_users table (correct name - snake_case + plural)
+    console.log('📊 Creating global_users table...');
     await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS "globalUser" (
+      CREATE TABLE IF NOT EXISTS global_users (
         id VARCHAR(255) PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         name VARCHAR(255) NOT NULL,
         password VARCHAR(255) NOT NULL,
         role VARCHAR(50) DEFAULT 'admin',
-        "tenantId" VARCHAR(255),
+        "isActive" BOOLEAN DEFAULT true,
+        "tenantId" VARCHAR(255) NOT NULL,
+        "lastLoginAt" TIMESTAMP,
         "createdAt" TIMESTAMP DEFAULT NOW(),
         "updatedAt" TIMESTAMP DEFAULT NOW(),
-        FOREIGN KEY ("tenantId") REFERENCES tenant(id)
+        FOREIGN KEY ("tenantId") REFERENCES tenants(id) ON DELETE CASCADE
       )
     `;
     console.log('✅ GlobalUser table created');
@@ -162,7 +177,7 @@ app.post('/api/migrate', async (req, res) => {
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public' 
-      AND table_name IN ('tenant', 'globalUser')
+      AND table_name IN ('tenants', 'global_users')
     `;
     console.log('✅ Tables verification:', tablesCheck);
     
