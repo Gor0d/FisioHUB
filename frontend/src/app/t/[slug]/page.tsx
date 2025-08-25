@@ -59,6 +59,16 @@ export default function TenantPage() {
       setTenantInfo(data);
     } catch (error) {
       console.error('Erro ao carregar tenant:', error);
+      // Fallback: create tenant info from slug if API fails
+      setTenantInfo({
+        id: `fallback-${tenantSlug}`,
+        name: tenantSlug.charAt(0).toUpperCase() + tenantSlug.slice(1).replace(/-/g, ' '),
+        slug: tenantSlug,
+        status: 'trial',
+        plan: 'professional',
+        createdAt: new Date().toISOString(),
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+      });
     } finally {
       setLoading(false);
     }
