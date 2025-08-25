@@ -54,15 +54,20 @@ export default function TenantPage() {
   }, [slug]);
 
   const fetchTenantInfo = async (tenantSlug: string) => {
+    setLoading(true);
     try {
       const data = await tenantApi.getInfo(tenantSlug);
       setTenantInfo(data);
     } catch (error) {
       console.error('Erro ao carregar tenant:', error);
-      // Fallback: create tenant info from slug if API fails
+      // Always create fallback tenant info for development
+      const fallbackName = tenantSlug.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+      
       setTenantInfo({
         id: `fallback-${tenantSlug}`,
-        name: tenantSlug.charAt(0).toUpperCase() + tenantSlug.slice(1).replace(/-/g, ' '),
+        name: fallbackName,
         slug: tenantSlug,
         status: 'trial',
         plan: 'professional',
