@@ -93,4 +93,181 @@ router.post('/tenants/register', registerTenant);
  */
 router.get('/tenants/:slug/info', getTenantInfo);
 
+/**
+ * POST /api/create-test-tenant
+ * Create a complete test tenant with admin user for testing
+ */
+router.post('/create-test-tenant', async (req, res) => {
+  try {
+    const { prisma } = require('@/lib/prisma');
+    const bcrypt = require('bcryptjs');
+    
+    const { name = 'Clinica Teste', slug = 'clinica-teste', email = 'admin@teste.com', password = 'teste123' } = req.body;
+    
+    // Create tenant
+    const tenant = await prisma.tenant.create({
+      data: {
+        name,
+        slug: slug + '-' + Date.now(), // Make unique
+        email,
+        status: 'trial',
+        plan: 'basic',
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      }
+    });
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create admin user
+    const adminUser = await prisma.globalUser.create({
+      data: {
+        email,
+        name: 'Admin ' + name,
+        password: hashedPassword,
+        role: 'admin',
+        tenantId: tenant.id
+      }
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Test tenant created successfully',
+      data: {
+        tenant: {
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          status: tenant.status,
+          plan: tenant.plan
+        },
+        admin: {
+          id: adminUser.id,
+          email: adminUser.email,
+          name: adminUser.name,
+          role: adminUser.role
+        },
+        credentials: {
+          email,
+          password, // Return plain password for testing
+          tenantSlug: tenant.slug
+        }
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('Error creating test tenant:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create test tenant',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/test-login
+ * Simplified login for testing with current schema
+ */
+router.post('/test-login', async (req, res) => {
+  try {
+    const { prisma } = require('@/lib/prisma');
+    const bcrypt = require('bcryptjs');
+    const jwt = require('jsonwebtoken');
+    
+    const { email, password, tenantSlug } = req.body;
+    
+    if (!email || !password || !tenantSlug) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, password, and tenantSlug are required'
+      });
+    }
+    
+    // Find tenant
+    const tenant = await prisma.tenant.findFirst({
+      where: {
+        OR: [
+          { slug: tenantSlug },
+          { subdomain: tenantSlug }
+        ],
+        status: { in: ['trial', 'active'] }
+      }
+    });
+    
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tenant not found or inactive'
+      });
+    }
+    
+    // Find user
+    const user = await prisma.globalUser.findFirst({
+      where: {
+        email: email,
+        tenantId: tenant.id,
+        isActive: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+    
+    // Verify password
+    const passwordValid = await bcrypt.compare(password, user.password);
+    if (!passwordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+    
+    // Generate simple JWT
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        tenantId: tenant.id,
+        tenantSlug: tenant.slug,
+        role: user.role
+      },
+      process.env.JWT_SECRET || 'default-secret',
+      { expiresIn: '24h' }
+    );
+    
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        },
+        tenant: {
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          plan: tenant.plan
+        }
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Login failed',
+      error: error.message
+    });
+  }
+});
+
 export { router as publicRoutes };
