@@ -43,7 +43,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-bold">Entre na sua conta</CardTitle>
+        <CardTitle className="text-2xl font-bold text-black">Entre na sua conta</CardTitle>
         <CardDescription>
           Digite seu email e senha para acessar o sistema
         </CardDescription>
@@ -57,7 +57,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           )}
 
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium text-foreground">
+            <label htmlFor="email" className="text-sm font-medium text-black">
               Email
             </label>
             <div className="relative">
@@ -78,7 +78,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium text-foreground">
+            <label htmlFor="password" className="text-sm font-medium text-black">
               Senha
             </label>
             <div className="relative">
