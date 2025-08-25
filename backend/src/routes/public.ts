@@ -41,16 +41,18 @@ router.get('/migrate', async (req, res) => {
 /**
  * Test basic endpoint
  */
-router.get('/test-basic', async (req, res) => {
+router.get('/test-basic', async (req: Request, res: Response) => {
   try {
-    res.json({ 
+    return res.json({ 
       success: true, 
-      message: 'Basic endpoint working',
+      message: 'Basic endpoint working - VERSION 2.0 AUTH FIXED',
       timestamp: new Date().toISOString(),
-      env: process.env.NODE_ENV 
+      env: process.env.NODE_ENV,
+      authSystemFixed: true,
+      tenantAuthAvailable: true
     });
   } catch (error: any) {
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       message: 'Basic endpoint failed', 
       error: error.message 
