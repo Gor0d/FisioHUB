@@ -145,7 +145,7 @@ export class TenantService {
     try {
       await tenantPrisma.withTenant(schema, async (prisma) => {
         // 1. Criar cliente
-        const client = await prisma.$executeRaw`
+        const _ = await prisma.$executeRaw`
           INSERT INTO clients (name, contact_email, subscription_plan, active)
           VALUES (${data.clientName}, ${data.adminEmail}, 'enterprise', true)
           RETURNING id

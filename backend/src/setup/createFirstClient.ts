@@ -138,7 +138,7 @@ async function createFirstClient() {
 
           // Criar template padrão para fisioterapia
           if (serviceData.code === 'fisioterapia') {
-            const template = await tx.indicatorTemplate.create({
+            const _ = await tx.indicatorTemplate.create({
               data: {
                 name: "Indicadores de Fisioterapia Hospitalar",
                 description: "Template padrão para indicadores de fisioterapia hospitalar",

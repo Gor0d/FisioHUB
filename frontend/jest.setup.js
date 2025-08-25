@@ -34,10 +34,10 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 }))
 
 // Mock fetch globally
-global.fetch = jest.fn()
+global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>
 
 beforeEach(() => {
-  fetch.mockClear()
+  (fetch as jest.MockedFunction<typeof fetch>).mockClear()
 })
 
 // Custom render function for testing with providers

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { prisma } from '@/lib/prisma';
 import { createError } from '@/middleware/errorHandler';
 import { z } from 'zod';

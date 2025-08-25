@@ -134,7 +134,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
     }));
     
     // Buscar serviços disponíveis
-    let serviceWhere: any = { active: true };
+    const serviceWhere: any = { active: true };
     if (hospitalId) {
       serviceWhere.hospitalId = hospitalId as string;
     }
