@@ -28,8 +28,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Rotas de teste simples (sem banco)
-app.post('/api/tenants/register', (req, res) => {
+// Rotas de teste simples (sem banco) - mudei a rota para testar
+app.post('/api/register-test', (req, res) => {
   try {
     console.log('Registration request received:', req.body);
     res.json({
@@ -43,7 +43,7 @@ app.post('/api/tenants/register', (req, res) => {
   }
 });
 
-app.get('/api/tenants/:slug/info', (req, res) => {
+app.get('/api/info-test/:slug', (req, res) => {
   try {
     res.json({
       success: true,
