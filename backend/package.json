@@ -4,7 +4,7 @@
   "description": "FisioHub Backend API",
   "main": "index.js",
   "scripts": {
-    "build": "npx prisma generate && npx prisma db push --skip-generate && echo 'Prisma generated and schema synced'",
+    "build": "npx prisma generate && echo 'Prisma generated successfully'",
     "build:old": "tsc",
     "postbuild": "echo 'Build completed'",
     "dev": "tsx watch src/server.ts",
