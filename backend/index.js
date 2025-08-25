@@ -6,7 +6,12 @@ if (process.env.PORT === '8080' || process.env.RAILWAY_ENVIRONMENT) {
   // Force Railway DATABASE_URL
   process.env.DATABASE_URL = "postgresql://postgres:UvSaOMuJOsmBOvfByQrljtFYCbhTZJhW@tramway.proxy.rlwy.net:53549/railway";
   process.env.NODE_ENV = "production";
+  console.log('🚂 Railway detected - using Railway DATABASE_URL');
+} else {
+  console.log('💻 Local environment detected');
 }
+
+console.log('🔗 DATABASE_URL:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'undefined');
 
 const express = require('express');
 const cors = require('cors');
@@ -335,6 +340,7 @@ app.post('/api/tenants/register', async (req, res) => {
       console.error('Error code:', dbError.code);
       console.error('Error message:', dbError.message);
       console.error('Error stack:', dbError.stack);
+      console.error('DATABASE_URL being used:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 40) + '...' : 'undefined');
       console.warn('🔄 Using memory fallback due to error above');
       
       // Fallback to memory storage
