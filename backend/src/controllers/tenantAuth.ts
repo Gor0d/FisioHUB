@@ -155,22 +155,46 @@ export const registerTenant = async (req: Request, res: Response) => {
     
     const validatedData = createTenantSchema.parse(req.body);
     
-    // Criar tenant completo
-    const result = await tenantService.createTenant(validatedData);
+    // Simplified tenant creation - direct Prisma call without complex transaction
+    const { prisma } = require('@/lib/prisma');
     
-    console.log(`✅ Novo tenant criado: ${result.tenant.name} (${result.tenant.slug})`);
+    // Check if slug exists
+    const existingTenant = await prisma.tenant.findFirst({
+      where: { slug: validatedData.slug }
+    });
+    
+    if (existingTenant) {
+      return res.status(400).json({
+        success: false,
+        message: 'Este identificador já está em uso'
+      });
+    }
+    
+    // Create simple tenant
+    const tenant = await prisma.tenant.create({
+      data: {
+        name: validatedData.name,
+        slug: validatedData.slug,
+        email: validatedData.email,
+        plan: validatedData.plan || 'basic',
+        status: 'trial',
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      }
+    });
+    
+    console.log(`✅ Novo tenant criado: ${tenant.name} (${tenant.slug})`);
     
     res.status(201).json({
       success: true,
-      message: 'Tenant criado com sucesso! Verifique seu email para ativar a conta.',
+      message: 'Tenant criado com sucesso!',
       data: {
         tenant: {
-          id: result.tenant.id,
-          name: result.tenant.name,
-          slug: result.tenant.slug,
-          status: result.tenant.status,
-          plan: result.tenant.plan,
-          trialEndsAt: result.tenant.trialEndsAt
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          status: tenant.status,
+          plan: tenant.plan,
+          trialEndsAt: tenant.trialEndsAt
         }
       }
     });
