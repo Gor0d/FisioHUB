@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { registerTenant, getTenantInfo } from '@/controllers/tenantAuth';
 
 dotenv.config();
 
@@ -29,9 +28,33 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Rotas essenciais apenas
-app.post('/api/tenants/register', registerTenant);
-app.get('/api/tenants/:slug/info', getTenantInfo);
+// Rotas de teste simples (sem banco)
+app.post('/api/tenants/register', (req, res) => {
+  try {
+    console.log('Registration request received:', req.body);
+    res.json({
+      success: true,
+      message: 'Teste funcionando - banco desabilitado temporariamente',
+      data: { test: true, body: req.body }
+    });
+  } catch (error) {
+    console.error('Error in test registration:', error);
+    res.status(500).json({ success: false, message: 'Test error: ' + error.message });
+  }
+});
+
+app.get('/api/tenants/:slug/info', (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'Teste funcionando - banco desabilitado temporariamente',
+      data: { slug: req.params.slug, test: true }
+    });
+  } catch (error) {
+    console.error('Error in test tenant info:', error);
+    res.status(500).json({ success: false, message: 'Test error: ' + error.message });
+  }
+});
 
 // Test endpoint
 app.get('/api/test', (req, res) => {
