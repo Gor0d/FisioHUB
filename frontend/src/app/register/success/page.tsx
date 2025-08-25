@@ -66,7 +66,7 @@ export default function RegisterSuccessPage() {
       setTenantInfo({
         name: data.name,
         slug: data.slug,
-        subdomain: `${data.slug}.fisiohub.app`,
+        subdomain: `fisiohub.app/t/${data.slug}`,
         trialEndsAt: data.createdAt // Usando createdAt como fallback para trial
       });
     } catch (error) {
@@ -184,7 +184,7 @@ export default function RegisterSuccessPage() {
                   </div>
                   
                   <div>
-                    <Link href={`https://${tenantInfo.subdomain}/login`}>
+                    <Link href={`/t/${tenantInfo.slug}`}>
                       <Button className="w-full">
                         Acessar Minha Conta
                         <ArrowRight className="h-4 w-4 ml-2" />
