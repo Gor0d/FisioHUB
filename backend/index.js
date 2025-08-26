@@ -536,6 +536,62 @@ app.get('/api/tenants/:slug/info', async (req, res) => {
   }
 });
 
+// Simple endpoint to create missing tables
+app.post('/api/create-tables', async (req, res) => {
+  try {
+    console.log('🔧 Creating users table...');
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(255) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'user',
+        crf VARCHAR(255),
+        phone VARCHAR(255),
+        specialty VARCHAR(255),
+        "isActive" BOOLEAN DEFAULT true,
+        "lastLoginAt" TIMESTAMP,
+        "createdAt" TIMESTAMP DEFAULT NOW(),
+        "updatedAt" TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    
+    console.log('🔧 Creating patients table...');
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS patients (
+        id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255),
+        phone VARCHAR(255),
+        cpf VARCHAR(255),
+        "birthDate" TIMESTAMP,
+        address TEXT,
+        diagnosis TEXT,
+        observations TEXT,
+        "isActive" BOOLEAN DEFAULT true,
+        "userId" VARCHAR(255) NOT NULL,
+        "createdAt" TIMESTAMP DEFAULT NOW(),
+        "updatedAt" TIMESTAMP DEFAULT NOW(),
+        FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE
+      )
+    `;
+    
+    res.json({ 
+      success: true, 
+      message: 'Tables created successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error creating tables:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to create tables',
+      error: error.message
+    });
+  }
+});
+
 // Patients endpoints - BEFORE catch-all
 app.get('/api/patients', async (req, res) => {
   try {
