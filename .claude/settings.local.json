@@ -49,7 +49,8 @@
       "Bash(npx next:*)",
       "Bash(mv:*)",
       "Bash(true)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
