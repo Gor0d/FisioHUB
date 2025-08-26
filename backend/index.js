@@ -944,6 +944,86 @@ app.post('/api/patients/:patientId/transfer', async (req, res) => {
   }
 });
 
+// Get patient transfer history
+app.get('/api/patients/:patientId/transfers', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    
+    console.log(`📋 Fetching transfer history for patient ${patientId}`);
+    
+    // Get patient to verify it exists
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId }
+    });
+    
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Paciente não encontrado'
+      });
+    }
+    
+    // Create bed_transfers table if not exists (safety check)
+    try {
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS bed_transfers (
+          id VARCHAR(255) PRIMARY KEY,
+          "patientId" VARCHAR(255) NOT NULL,
+          "fromBed" VARCHAR(255),
+          "toBed" VARCHAR(255) NOT NULL,
+          "transferDate" TIMESTAMP DEFAULT NOW(),
+          reason TEXT,
+          notes TEXT,
+          "userId" VARCHAR(255) NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW(),
+          "updatedAt" TIMESTAMP DEFAULT NOW(),
+          FOREIGN KEY ("patientId") REFERENCES patients(id) ON DELETE CASCADE,
+          FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE
+        )
+      `;
+    } catch (createError) {
+      console.log('BedTransfer table creation skipped (may already exist)');
+    }
+    
+    // Get transfer history using raw SQL for compatibility
+    const transfers = await prisma.$queryRaw`
+      SELECT 
+        id,
+        "patientId",
+        "fromBed",
+        "toBed", 
+        "transferDate",
+        reason,
+        notes,
+        "createdAt"
+      FROM bed_transfers 
+      WHERE "patientId" = ${patientId}
+      ORDER BY "transferDate" DESC
+    `;
+    
+    console.log(`✅ Found ${transfers.length} transfers for patient ${patientId}`);
+    
+    res.json({
+      success: true,
+      message: 'Histórico de transferências carregado com sucesso',
+      data: {
+        patientId,
+        patientName: patient.name,
+        transfers: transfers || [],
+        total: transfers.length || 0
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching transfer history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao carregar histórico de transferências',
+      error: error.message
+    });
+  }
+});
+
 // Patient discharge endpoint
 app.post('/api/patients/:patientId/discharge', async (req, res) => {
   try {

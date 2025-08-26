@@ -108,7 +108,7 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
       if (response.data.success) {
         setTransferDialogOpen(false);
         setTransferData({ toBed: '', reason: '', notes: '' });
-        onUpdate(); // Refresh patient list
+        onUpdate(); // Refresh patient data and history
         alert('Transferência registrada com sucesso!');
       }
     } catch (error) {

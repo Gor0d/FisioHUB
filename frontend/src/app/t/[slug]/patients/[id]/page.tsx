@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import type { Patient } from '@/types';
 import { PatientActions } from '@/components/ui/patient-actions';
+import { TransferHistory } from '@/components/patient/transfer-history';
 
 export default function PatientDetailsPage() {
   const params = useParams();
@@ -339,27 +340,11 @@ export default function PatientDetailsPage() {
               </CardContent>
             </Card>
 
-            {/* Transfer History Placeholder */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Histórico de Transferências
-                </CardTitle>
-                <CardDescription>
-                  Registro de mudanças de leito
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-2">Histórico será implementado em breve</p>
-                  <p className="text-xs text-muted-foreground">
-                    Transferências e movimentações do paciente aparecerão aqui
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Transfer History */}
+            <TransferHistory 
+              patientId={patient.id}
+              patientName={patient.name}
+            />
           </div>
 
           {/* Sidebar */}
