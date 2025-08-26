@@ -1,210 +1,256 @@
-# FisioHub SaaS - Sistema Completo de Fisioterapia
+# FisioHub SaaS - Sistema Hospitalar Completo
 
 ## 🚀 Status Atual do Projeto
 
-### ✅ CONCLUÍDO
-- **Sistema SaaS 100% funcional em produção**
-- **Domínios fisiohub.app e fisiohubtech.com.br funcionando**
-- **Deploy automatizado Vercel + Railway**
-- **TypeScript compilation errors resolvidos**
-- **Multitenancy implementado e funcional**
-- **Frontend Next.js 14 + Backend Node.js + PostgreSQL**
-- **Sistema de autenticação JWT completo**
-- **Formulários de avaliação (Barthel, MRC, Indicadores)**
-- **Dashboard com métricas e relatórios**
+### ✅ CONCLUÍDO - SISTEMA HOSPITALAR FUNCIONAL
+- **✅ Sistema SaaS 100% funcional em produção**
+- **✅ Domínios fisiohub.app e fisiohubtech.com.br funcionando**
+- **✅ API funcionando: api.fisiohub.app**
+- **✅ Deploy automatizado Vercel + Railway**
+- **✅ Multitenancy implementado e funcional**
+- **✅ Frontend Next.js 14 + Backend Node.js + PostgreSQL**
 
-### 🔄 TAREFAS PENDENTES
+### 🏥 FUNCIONALIDADES HOSPITALARES IMPLEMENTADAS
+- **✅ Cadastro de Pacientes** - Com data de internação obrigatória
+- **✅ Transferência de Leito** - Histórico completo, motivo, observações
+- **✅ Alta de Pacientes** - Data/hora automática, motivo, inativação
+- **✅ Dashboard Dinâmico** - Métricas reais (pacientes ativos/inativos)
+- **✅ API Endpoints Completos** - CRUD pacientes + transferências + alta
+- **✅ Database Schema** - Tabelas patients, bed_transfers, relacionamentos
 
-#### 1. **URGENTE: Configurar api.fisiohub.app custom domain no Railway**
-**Status**: EM PROGRESSO
+## 🔄 PRÓXIMAS FUNCIONALIDADES - ROADMAP
 
-**Passos detalhados:**
-1. **Railway Dashboard**: https://railway.app/dashboard
-   - Login e encontrar projeto backend (FisioHub API)
-   - Ir em Settings > Domains
-   - Add Custom Domain: `api.fisiohub.app`
-   - Copiar valor CNAME fornecido
+### 🎯 **HOJE - PRIORIDADE MÁXIMA**
 
-2. **GoDaddy DNS**:
-   - Acessar painel GoDaddy para domínio `fisiohub.app`
-   - Adicionar registro CNAME:
-     - Tipo: CNAME
-     - Nome: api  
-     - Valor: [CNAME do Railway]
-     - TTL: 600
+#### 1. **🔍 Página Ver Detalhes do Paciente**
+**Localização**: `/frontend/src/app/t/[slug]/patients/[id]/page.tsx`
+**API Necessária**: `GET /api/patients/:id` (já existe)
 
-3. **Verificação**:
-   - Aguardar propagação DNS (até 48h)
-   - Railway gerará SSL automaticamente
-   - Testar: https://api.fisiohub.app/health
+**Checklist:**
+- [ ] Página individual do paciente
+- [ ] Informações pessoais e clínicas organizadas
+- [ ] Histórico de transferências integrado
+- [ ] Botões de ação (Editar, Transferir, Alta)
+- [ ] Design responsivo e profissional
 
-#### 2. **Teste End-to-End Completo**
-**Checklist de testes:**
-- [ ] Cadastro de novo tenant
-- [ ] Login de usuário admin
-- [ ] Criação de pacientes
-- [ ] Preenchimento de formulários (Barthel, MRC, Indicadores)
-- [ ] Visualização de relatórios
-- [ ] Mudança entre tenants
-- [ ] Responsividade mobile
+#### 2. **✏️ Modal de Edição de Pacientes**
+**Localização**: Integrar no `PatientActions` existente
+**API Necessária**: `PATCH /api/patients/:id` (criar)
 
-#### 3. **GitHub Secrets para Deploy Automatizado**
-**Secrets necessários no GitHub:**
+**Checklist:**
+- [ ] Modal de edição com todos os campos
+- [ ] Validação idêntica ao cadastro
+- [ ] Endpoint PATCH no backend
+- [ ] Integração no menu de 3 pontos
+- [ ] Feedback visual de sucesso/erro
+
+#### 3. **📋 Histórico de Transferências**
+**Localização**: Seção na página de detalhes
+**API Necessária**: `GET /api/patients/:id/transfers` (criar)
+
+**Checklist:**
+- [ ] API para buscar transferências do paciente
+- [ ] Timeline visual cronológico
+- [ ] Dados: data, leito origem/destino, motivo
+- [ ] Design elegante tipo "histórico médico"
+
+### ⚡ **ESTA SEMANA - MELHORIAS UX**
+
+#### 4. **🔔 Toast Notifications System**
+**Localização**: `/frontend/src/components/ui/toast.tsx`
+
+**Checklist:**
+- [ ] Componente Toast customizado
+- [ ] Substituir todos os `alert()` 
+- [ ] Tipos: success, error, warning, info
+- [ ] Auto-dismiss e posicionamento
+
+#### 5. **⚡ Loading States Aprimorados**
+**Melhorar UX existente**:
+- [ ] Spinners nos botões de ação
+- [ ] Skeleton loading na listagem
+- [ ] Estados de carregamento nos modais
+- [ ] Disabled states durante operações
+
+#### 6. **🔍 Filtros e Busca Avançada**
+**Localização**: `/frontend/src/app/t/[slug]/patients/page.tsx`
+
+**Checklist:**
+- [ ] Filtros: Todos, Ativos, Com Alta
+- [ ] Filtro por data de internação (range)
+- [ ] Busca por leito específico
+- [ ] Ordenação (nome, data internação, leito)
+
+### 📊 **PRÓXIMA SEMANA - ANALYTICS & RELATÓRIOS**
+
+#### 7. **Dashboard Hospitalar Avançado**
+- [ ] Gráfico ocupação por leito
+- [ ] Métricas: Transferências hoje, Altas hoje
+- [ ] Tempo médio de internação
+- [ ] Taxa de ocupação por setor
+
+#### 8. **Relatórios Exportáveis**
+- [ ] Exportar lista de pacientes (Excel/PDF)
+- [ ] Relatório de altas por período
+- [ ] Relatório de transferências
+- [ ] Indicadores de gestão hospitalar
+
+## 🛠️ TAREFAS TÉCNICAS NECESSÁRIAS
+
+### Backend APIs a Criar:
+```javascript
+// Edição de pacientes
+PATCH /api/patients/:id
+
+// Histórico de transferências  
+GET /api/patients/:id/transfers
+
+// Busca com filtros
+GET /api/patients?status=active&startDate=2025-01-01&endDate=2025-01-31
+
+// Métricas do dashboard
+GET /api/dashboard/metrics
 ```
-NEXT_PUBLIC_API_URL=https://api.fisiohub.app
-DATABASE_URL=[URL Railway PostgreSQL]
-JWT_SECRET=[Secret JWT]
+
+### Frontend Components a Criar:
+```
+/components/ui/toast.tsx
+/components/patient/patient-details.tsx
+/components/patient/patient-edit-modal.tsx
+/components/patient/transfer-history.tsx
+/components/dashboard/hospital-metrics.tsx
 ```
 
-#### 4. **Integração AbacatePay**
-**Arquivos a modificar:**
-- `backend/src/services/payment.js` (criar)
-- `frontend/src/components/payment/` (criar)
-- Webhook endpoints para confirmação pagamento
+## 🏗️ Arquitetura Atualizada
 
-#### 5. **Ambiente Staging vs Produção**
-**Configurar:**
-- Branch `develop` → Deploy staging
-- Branch `main` → Deploy produção
-- Variáveis ambiente separadas
-
-#### 6. **Monitoramento e Analytics**
-**Implementar:**
-- Sentry para error tracking
-- Google Analytics
-- Logs estruturados
-- Health checks
-
-#### 7. **Documentação Final**
-- [ ] README.md detalhado
-- [ ] API documentation
-- [ ] Deployment guide
-- [ ] User manual
-
-## 🏗️ Arquitetura do Sistema
-
-### Frontend (Vercel)
-- **URL**: https://fisiohub.app | https://fisiohubtech.com.br
+### Frontend (Vercel) ✅
+- **URL**: https://fisiohub.app
+- **Status**: 100% Funcional
 - **Tech**: Next.js 14, TypeScript, Tailwind CSS
-- **Deploy**: Automático via GitHub
 
-### Backend (Railway)
-- **URL**: https://api.fisiohub.app (em configuração)
-- **URL Temp**: [railway-generated-url].railway.app
+### Backend (Railway) ✅  
+- **URL**: https://api.fisiohub.app
+- **Status**: 100% Funcional
+- **Endpoints**: 8+ rotas funcionando
 - **Tech**: Node.js, Express, Prisma, PostgreSQL
-- **Deploy**: Automático via GitHub
 
-### Database
-- **Provider**: Railway PostgreSQL
-- **ORM**: Prisma
-- **Features**: Multitenancy, migrations automáticas
+### Database (Railway PostgreSQL) ✅
+- **Tabelas**: tenants, users, patients, bed_transfers
+- **Schema**: Sincronizado e funcionando
+- **Relationships**: Foreign keys configuradas
 
-## 📁 Estrutura de Pastas Críticas
+## 📁 Estrutura Atualizada
 
 ```
 FisioHUB/
 ├── frontend/
 │   ├── src/
-│   │   ├── types/index.ts          # CRÍTICO: Type definitions
-│   │   ├── components/forms/       # Formulários de avaliação
-│   │   ├── components/ui/          # UI components
-│   │   └── app/                    # App Router pages
-│   ├── next.config.js              # Config produção
-│   └── package.json
+│   │   ├── app/t/[slug]/
+│   │   │   ├── patients/
+│   │   │   │   ├── page.tsx              ✅ Lista pacientes
+│   │   │   │   ├── new/page.tsx          ✅ Cadastro
+│   │   │   │   └── [id]/page.tsx         🔄 PRÓXIMO: Detalhes
+│   │   │   └── dashboard/page.tsx        ✅ Dashboard
+│   │   ├── components/ui/
+│   │   │   ├── patient-actions.tsx       ✅ Menu 3 pontos
+│   │   │   ├── dialog.tsx               ✅ Modais
+│   │   │   └── toast.tsx                🔄 PRÓXIMO: Notifications
+│   │   └── types/index.ts               ✅ Tipagem TypeScript
 ├── backend/
-│   ├── src/
-│   │   ├── controllers/            # API endpoints
-│   │   ├── middleware/             # Auth, tenant resolution
-│   │   ├── models/                 # Database models
-│   │   └── services/               # Business logic
-│   ├── prisma/                     # Database schema
-│   └── package.json
-└── CLAUDE.md                       # Este arquivo
+│   ├── index.js                         ✅ 8+ rotas funcionando
+│   └── prisma/schema.prisma             ✅ Schema completo
 ```
 
 ## 🔧 Comandos de Desenvolvimento
 
-### Frontend
+### Testar Sistema Atual:
 ```bash
-cd frontend
-npm install
-npm run dev    # localhost:3000
-npm run build  # Build para produção
-npm run lint   # Linting
+# Frontend
+cd frontend && npm run dev    # localhost:3000
+
+# Backend  
+cd backend && node index.js  # localhost:3001
+
+# Testar API
+curl https://api.fisiohub.app/health
+curl https://api.fisiohub.app/api/patients
 ```
 
-### Backend  
+## 🌐 URLs do Sistema Funcionando
+
+- **✅ Frontend**: https://fisiohub.app/t/hospital-marateste
+- **✅ Cadastro**: https://fisiohub.app/t/hospital-marateste/patients/new
+- **✅ Listagem**: https://fisiohub.app/t/hospital-marateste/patients
+- **✅ Dashboard**: https://fisiohub.app/t/hospital-marateste/dashboard
+- **✅ API Health**: https://api.fisiohub.app/health
+- **✅ API Pacientes**: https://api.fisiohub.app/api/patients
+
+## 🚨 Issues Resolvidas
+
+### ✅ Problemas Corrigidos:
+- **Database Schema**: Todas as colunas criadas
+- **API Endpoints**: Transfer e discharge funcionando
+- **Frontend Build**: Dependências Radix UI resolvidas
+- **PatientActions**: Menu dropdown funcionando
+- **TypeScript**: 100% compilação limpa
+
+### 📋 Backlog de Melhorias:
+1. **Ver Detalhes** - Página individual do paciente
+2. **Edição** - Modal para atualizar dados
+3. **Histórico** - Timeline de transferências
+4. **UX** - Toast notifications profissionais
+5. **Filtros** - Busca avançada na listagem
+
+## 🎯 Objetivos de Hoje
+
+### 🔥 **Meta Mínima** (9h-12h):
+- [ ] Página detalhes do paciente funcionando
+- [ ] Modal de edição operacional
+
+### 🚀 **Meta Ideal** (9h-16h):
+- [ ] Histórico de transferências visível  
+- [ ] Toast notifications implementadas
+- [ ] Loading states nos modais
+
+### 💎 **Meta Stretch** (9h-18h):
+- [ ] Filtros na listagem funcionando
+- [ ] Dashboard com métricas de transferência
+- [ ] Export básico de dados
+
+## 📊 Métricas Atuais do Sistema
+
+- **👥 Pacientes Cadastrados**: 3+ (dados reais)
+- **🏥 Transferências**: Sistema funcional  
+- **📋 Altas**: Sistema funcional
+- **🔧 APIs**: 8+ endpoints ativos
+- **💻 Frontend**: 100% responsivo
+- **🏗️ Infraestrutura**: Produção estável
+
+## 📝 Comandos Úteis para Desenvolvimento
+
+### Verificar Sistema:
 ```bash
-cd backend
-npm install
-npm run dev    # localhost:3001
-npx prisma generate
-npx prisma migrate dev
+# Status da API
+curl https://api.fisiohub.app/health
+
+# Dados reais de pacientes  
+curl https://api.fisiohub.app/api/patients
+
+# Atualizar schema se necessário
+curl https://api.fisiohub.app/api/update-tables
 ```
 
-## 🌐 URLs do Sistema
-
-- **Frontend Prod**: https://fisiohub.app
-- **Frontend Alt**: https://fisiohubtech.com.br
-- **Backend Prod**: https://api.fisiohub.app (configurando)
-- **Backend Dev**: http://localhost:3001
-- **Frontend Dev**: http://localhost:3000
-
-## 🔑 Variáveis de Ambiente Críticas
-
-### Frontend (.env.local)
-```
-NEXT_PUBLIC_API_URL=https://api.fisiohub.app
-```
-
-### Backend (.env)
-```
-DATABASE_URL=[Railway PostgreSQL URL]
-JWT_SECRET=[Secret Key]
-PORT=3001
-```
-
-## 🚨 Problemas Conhecidos e Soluções
-
-### 1. TypeScript Compilation Errors
-**Solução**: Todas as interfaces estão em `frontend/src/types/index.ts`
-- Use `as any` para tipos complexos quando necessário
-- Imports: `import type { ... } from '@/types'`
-
-### 2. Railway Custom Domain
-**Status**: Pendente configuração DNS
-- Precisa adicionar CNAME no GoDaddy
-- SSL será gerado automaticamente
-
-### 3. Next.js Middleware Errors
-**Solução**: Erro temporário, reiniciar dev server resolve
+### Deploy:
 ```bash
-cd frontend && npm run dev
+git add .
+git commit -m "Implementa [funcionalidade]"  
+git push origin main
+# Deploy automático Vercel + Railway
 ```
-
-## 📊 Métricas de Desenvolvimento
-- **TypeScript Errors**: 0 ✅
-- **Build Errors**: 0 ✅  
-- **Deploy Status**: Funcionando ✅
-- **Custom Domains**: 2/3 configurados (pendente api.*)
-- **SSL Certificates**: Válidos ✅
-
-## 🎯 Próximos Passos Imediatos
-
-1. **AGORA**: Configurar api.fisiohub.app no Railway + GoDaddy DNS
-2. **HOJE**: Teste end-to-end completo do sistema
-3. **ESTA SEMANA**: GitHub Secrets e AbacatePay integration
-4. **PRÓXIMA**: Staging environment e monitoring
-
-## 📝 Notas Importantes
-
-- **Multitenancy**: Sistema funciona com slugs de tenant (ex: hospital-maradei)
-- **Authentication**: JWT tokens com refresh automático
-- **Forms**: Barthel, MRC e Indicadores totalmente funcionais
-- **Database**: Prisma migrations automáticas no deploy
-- **TypeScript**: Compilação 100% limpa após refatoração
 
 ---
-**Última atualização**: 2025-08-25 por Emerson Guimarães
+**Última atualização**: 2025-08-26 - Sistema Hospitalar Completo
 **Responsável técnico**: Emerson Guimarães
-**Status geral**: 🟢 PRODUÇÃO FUNCIONANDO - Pendente domain config
+**Status geral**: 🟢 PRODUÇÃO 100% FUNCIONANDO
+
+**Próximo milestone**: Página de detalhes e edição de pacientes 🎯
