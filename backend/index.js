@@ -596,6 +596,50 @@ app.post('/api/create-tables', async (req, res) => {
 app.get('/api/patients', async (req, res) => {
   try {
     console.log('📋 Fetching patients...');
+    
+    // Auto-create tables if they don't exist
+    try {
+      console.log('🔧 Ensuring tables exist...');
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS users (
+          id VARCHAR(255) PRIMARY KEY,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          role VARCHAR(50) DEFAULT 'user',
+          crf VARCHAR(255),
+          phone VARCHAR(255),
+          specialty VARCHAR(255),
+          "isActive" BOOLEAN DEFAULT true,
+          "lastLoginAt" TIMESTAMP,
+          "createdAt" TIMESTAMP DEFAULT NOW(),
+          "updatedAt" TIMESTAMP DEFAULT NOW()
+        )
+      `;
+      
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS patients (
+          id VARCHAR(255) PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255),
+          phone VARCHAR(255),
+          cpf VARCHAR(255),
+          "birthDate" TIMESTAMP,
+          address TEXT,
+          diagnosis TEXT,
+          observations TEXT,
+          "isActive" BOOLEAN DEFAULT true,
+          "userId" VARCHAR(255) NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW(),
+          "updatedAt" TIMESTAMP DEFAULT NOW(),
+          FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE
+        )
+      `;
+      console.log('✅ Tables ensured');
+    } catch (createError) {
+      console.log('Table creation skipped (may already exist):', createError.message);
+    }
+    
     const patients = await prisma.patient.findMany({
       orderBy: { createdAt: 'desc' }
     });
