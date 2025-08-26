@@ -536,6 +536,96 @@ app.get('/api/tenants/:slug/info', async (req, res) => {
   }
 });
 
+// Update tables with new schema
+app.get('/api/update-tables', async (req, res) => {
+  try {
+    console.log('🔄 Updating table schema...');
+    
+    // Add new columns to existing patients table
+    try {
+      console.log('➕ Adding admissionDate column...');
+      await prisma.$executeRaw`
+        ALTER TABLE patients ADD COLUMN IF NOT EXISTS "admissionDate" TIMESTAMP
+      `;
+    } catch (e) {
+      console.log('admissionDate column may already exist');
+    }
+    
+    try {
+      console.log('➕ Adding dischargeDate column...');
+      await prisma.$executeRaw`
+        ALTER TABLE patients ADD COLUMN IF NOT EXISTS "dischargeDate" TIMESTAMP
+      `;
+    } catch (e) {
+      console.log('dischargeDate column may already exist');
+    }
+    
+    try {
+      console.log('➕ Adding dischargeReason column...');
+      await prisma.$executeRaw`
+        ALTER TABLE patients ADD COLUMN IF NOT EXISTS "dischargeReason" TEXT
+      `;
+    } catch (e) {
+      console.log('dischargeReason column may already exist');
+    }
+    
+    try {
+      console.log('➕ Adding attendanceNumber column...');
+      await prisma.$executeRaw`
+        ALTER TABLE patients ADD COLUMN IF NOT EXISTS "attendanceNumber" VARCHAR(255)
+      `;
+    } catch (e) {
+      console.log('attendanceNumber column may already exist');
+    }
+    
+    try {
+      console.log('➕ Adding bedNumber column...');
+      await prisma.$executeRaw`
+        ALTER TABLE patients ADD COLUMN IF NOT EXISTS "bedNumber" VARCHAR(255)
+      `;
+    } catch (e) {
+      console.log('bedNumber column may already exist');
+    }
+    
+    // Create bed_transfers table
+    try {
+      console.log('📊 Creating bed_transfers table...');
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS bed_transfers (
+          id VARCHAR(255) PRIMARY KEY,
+          "patientId" VARCHAR(255) NOT NULL,
+          "fromBed" VARCHAR(255),
+          "toBed" VARCHAR(255) NOT NULL,
+          "transferDate" TIMESTAMP DEFAULT NOW(),
+          reason TEXT,
+          notes TEXT,
+          "userId" VARCHAR(255) NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW(),
+          "updatedAt" TIMESTAMP DEFAULT NOW(),
+          FOREIGN KEY ("patientId") REFERENCES patients(id) ON DELETE CASCADE,
+          FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE
+        )
+      `;
+    } catch (e) {
+      console.log('bed_transfers table may already exist');
+    }
+    
+    res.json({
+      success: true,
+      message: 'Schema updated successfully!',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Error updating schema:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update schema',
+      error: error.message
+    });
+  }
+});
+
 // EMERGENCY: Direct SQL table creation
 app.get('/api/force-create-tables', async (req, res) => {
   try {
