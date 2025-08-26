@@ -536,8 +536,8 @@ app.get('/api/tenants/:slug/info', async (req, res) => {
   }
 });
 
-// Simple endpoint to create missing tables
-app.post('/api/create-tables', async (req, res) => {
+// EMERGENCY: Direct SQL table creation
+app.get('/api/force-create-tables', async (req, res) => {
   try {
     console.log('🔧 Creating users table...');
     await prisma.$executeRaw`
