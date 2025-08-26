@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Patient } from '@/types';
+import { useParams } from 'next/navigation';
 
 interface PatientActionsProps {
   patient: Patient;
@@ -29,6 +30,8 @@ interface PatientActionsProps {
 }
 
 export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
+  const params = useParams();
+  const slug = params?.slug as string;
   const [showMenu, setShowMenu] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [dischargeDialogOpen, setDischargeDialogOpen] = useState(false);
@@ -122,7 +125,7 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => {
                 setShowMenu(false);
-                // TODO: Ver detalhes
+                window.location.href = `/t/${slug}/patients/${patient.id}`;
               }}
             >
               <Eye className="h-4 w-4 mr-2" />
