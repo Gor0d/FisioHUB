@@ -62,50 +62,50 @@ const dashboardStats = [
   }
 ];
 
-const quickActions = [
-  {
-    title: "Novo Paciente",
-    description: "Cadastrar um novo paciente no sistema",
-    icon: Users,
-    href: `/t/${slug}/patients/new`,
-    color: "bg-blue-500"
-  },
-  {
-    title: "Ver Pacientes",
-    description: "Gerenciar pacientes cadastrados",
-    icon: Users,
-    href: `/t/${slug}/patients`,
-    color: "bg-blue-600"
-  },
-  {
-    title: "Agendar Consulta",
-    description: "Marcar nova consulta ou sessão",
-    icon: Calendar,
-    href: `/t/${slug}/appointments/new`,
-    color: "bg-green-500"
-  },
-  {
-    title: "Aplicar Escala",
-    description: "Barthel, MRC ou indicadores customizados",
-    icon: BarChart3,
-    href: `/t/${slug}/assessments/new`,
-    color: "bg-purple-500"
-  },
-  {
-    title: "Relatórios",
-    description: "Visualizar dashboards e métricas",
-    icon: Activity,
-    href: `/t/${slug}/reports`,
-    color: "bg-orange-500"
-  }
-];
-
 export default function TenantDashboard() {
   const params = useParams();
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   const slug = params?.slug as string;
+
+  const quickActions = [
+    {
+      title: "Novo Paciente",
+      description: "Cadastrar um novo paciente no sistema",
+      icon: Users,
+      href: `/t/${slug}/patients/new`,
+      color: "bg-blue-500"
+    },
+    {
+      title: "Ver Pacientes",
+      description: "Gerenciar pacientes cadastrados",
+      icon: Users,
+      href: `/t/${slug}/patients`,
+      color: "bg-blue-600"
+    },
+    {
+      title: "Agendar Consulta",
+      description: "Marcar nova consulta ou sessão",
+      icon: Calendar,
+      href: `/t/${slug}/appointments/new`,
+      color: "bg-green-500"
+    },
+    {
+      title: "Aplicar Escala",
+      description: "Barthel, MRC ou indicadores customizados",
+      icon: BarChart3,
+      href: `/t/${slug}/assessments/new`,
+      color: "bg-purple-500"
+    },
+    {
+      title: "Relatórios",
+      description: "Visualizar dashboards e métricas",
+      icon: Activity,
+      href: `/t/${slug}/reports`,
+      color: "bg-orange-500"
+    }
+  ];
 
   useEffect(() => {
     if (slug) {
