@@ -33,9 +33,24 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
   const params = useParams();
   const slug = params?.slug as string;
   const [showMenu, setShowMenu] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [dischargeDialogOpen, setDischargeDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Edit form state
+  const [editData, setEditData] = useState({
+    name: patient.name || '',
+    email: patient.email || '',
+    phone: patient.phone || '',
+    attendanceNumber: (patient as any).attendanceNumber || '',
+    bedNumber: (patient as any).bedNumber || '',
+    admissionDate: (patient as any).admissionDate ? new Date((patient as any).admissionDate).toISOString().slice(0, 16) : '',
+    birthDate: patient.birthDate ? new Date(patient.birthDate).toISOString().slice(0, 10) : '',
+    address: patient.address || '',
+    diagnosis: (patient as any).diagnosis || '',
+    observations: (patient as any).observations || ''
+  });
 
   // Transfer form state
   const [transferData, setTransferData] = useState({
@@ -50,6 +65,32 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
     reason: '',
     notes: ''
   });
+
+  const handleEditPatient = async () => {
+    if (!editData.name.trim()) return;
+    
+    setLoading(true);
+    try {
+      const updatePayload = {
+        ...editData,
+        birthDate: editData.birthDate ? new Date(editData.birthDate).toISOString() : null,
+        admissionDate: editData.admissionDate ? new Date(editData.admissionDate).toISOString() : null
+      };
+
+      const response = await api.patch(`/api/patients/${patient.id}`, updatePayload);
+
+      if (response.data.success) {
+        setEditDialogOpen(false);
+        onUpdate(); // Refresh patient data
+        alert('Paciente atualizado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar paciente:', error);
+      alert('Erro ao atualizar paciente. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBedTransfer = async () => {
     if (!transferData.toBed.trim()) return;
@@ -136,7 +177,7 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => {
                 setShowMenu(false);
-                // TODO: Editar
+                setEditDialogOpen(true);
               }}
             >
               <Edit className="h-4 w-4 mr-2" />
@@ -181,6 +222,163 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
           onClick={() => setShowMenu(false)}
         />
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Paciente</DialogTitle>
+            <DialogDescription>
+              Atualizar informações de {patient.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Dados Pessoais */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Dados Pessoais</h3>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Nome Completo *
+                </label>
+                <Input
+                  placeholder="Nome completo"
+                  value={editData.name}
+                  onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Email
+                  </label>
+                  <Input
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    value={editData.email}
+                    onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Telefone
+                  </label>
+                  <Input
+                    placeholder="(11) 99999-9999"
+                    value={editData.phone}
+                    onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Número do Atendimento
+                  </label>
+                  <Input
+                    placeholder="ATD-2024-001"
+                    value={editData.attendanceNumber}
+                    onChange={(e) => setEditData(prev => ({ ...prev, attendanceNumber: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Leito
+                  </label>
+                  <Input
+                    placeholder="101-A"
+                    value={editData.bedNumber}
+                    onChange={(e) => setEditData(prev => ({ ...prev, bedNumber: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Data de Internação
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={editData.admissionDate}
+                    onChange={(e) => setEditData(prev => ({ ...prev, admissionDate: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Data de Nascimento
+                  </label>
+                  <Input
+                    type="date"
+                    value={editData.birthDate}
+                    onChange={(e) => setEditData(prev => ({ ...prev, birthDate: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Endereço
+                </label>
+                <Input
+                  placeholder="Rua, número, bairro, cidade"
+                  value={editData.address}
+                  onChange={(e) => setEditData(prev => ({ ...prev, address: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Dados Clínicos */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Dados Clínicos</h3>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Diagnóstico
+                </label>
+                <Input
+                  placeholder="Ex: Lombalgia crônica"
+                  value={editData.diagnosis}
+                  onChange={(e) => setEditData(prev => ({ ...prev, diagnosis: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Observações
+                </label>
+                <Textarea
+                  placeholder="Observações sobre o paciente..."
+                  value={editData.observations}
+                  onChange={(e) => setEditData(prev => ({ ...prev, observations: e.target.value }))}
+                  rows={4}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setEditDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleEditPatient}
+              disabled={loading || !editData.name.trim()}
+            >
+              {loading ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Transfer Dialog */}
       <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>

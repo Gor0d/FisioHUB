@@ -30,6 +30,7 @@ export default function PatientDetailsPage() {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
 
   const slug = params?.slug as string;
   const patientId = params?.id as string;

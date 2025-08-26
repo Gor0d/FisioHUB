@@ -805,6 +805,50 @@ app.post('/api/patients', async (req, res) => {
   }
 });
 
+// Update patient endpoint
+app.patch('/api/patients/:patientId', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const updateData = req.body;
+    
+    console.log(`✏️ Updating patient ${patientId}:`, updateData);
+    
+    // Get current patient to verify it exists
+    const existingPatient = await prisma.patient.findUnique({
+      where: { id: patientId }
+    });
+    
+    if (!existingPatient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Paciente não encontrado'
+      });
+    }
+    
+    // Update patient with new data
+    const updatedPatient = await prisma.patient.update({
+      where: { id: patientId },
+      data: updateData
+    });
+    
+    console.log('✅ Patient updated successfully:', updatedPatient.id);
+    
+    res.json({
+      success: true,
+      message: 'Paciente atualizado com sucesso',
+      data: updatedPatient
+    });
+    
+  } catch (error) {
+    console.error('Error updating patient:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar paciente',
+      error: error.message
+    });
+  }
+});
+
 // Patient bed transfer endpoint
 app.post('/api/patients/:patientId/transfer', async (req, res) => {
   try {
