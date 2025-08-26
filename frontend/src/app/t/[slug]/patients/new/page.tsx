@@ -19,6 +19,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 
 interface PatientData {
   name: string;
@@ -97,18 +98,30 @@ export default function NewPatientPage() {
     setLoading(true);
     
     try {
-      // Simular salvamento (implementar API depois)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSuccess(true);
-      
-      // Redirecionar após sucesso
-      setTimeout(() => {
-        router.push(`/t/${slug}/patients`);
-      }, 2000);
+      // Integração com API real
+      const patientPayload = {
+        ...patientData,
+        birthDate: patientData.birthDate ? new Date(patientData.birthDate).toISOString() : null
+      };
+
+      console.log('Enviando paciente para API:', patientPayload);
+      const response = await api.post('/api/patients', patientPayload);
+
+      if (response.data.success) {
+        console.log('Paciente criado com sucesso:', response.data.data);
+        setSuccess(true);
+        
+        // Redirecionar após sucesso
+        setTimeout(() => {
+          router.push(`/t/${slug}/patients`);
+        }, 2000);
+      } else {
+        throw new Error(response.data.message || 'Erro ao salvar paciente');
+      }
       
     } catch (error) {
       console.error('Erro ao salvar paciente:', error);
+      setErrors({ general: 'Erro ao salvar paciente. Tente novamente.' });
     } finally {
       setLoading(false);
     }
@@ -343,6 +356,16 @@ export default function NewPatientPage() {
                     />
                   </div>
                 </div>
+
+                {/* Error Message */}
+                {errors.general && (
+                  <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                      <p className="text-red-700 text-sm">{errors.general}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Botões */}
                 <div className="flex justify-between pt-6 border-t">
