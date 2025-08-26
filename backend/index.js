@@ -494,7 +494,7 @@ app.get('/api/tenants/:slug/info', async (req, res) => {
   }
 });
 
-// Patients endpoints
+// Patients endpoints - BEFORE catch-all
 app.get('/api/patients', async (req, res) => {
   try {
     console.log('📋 Fetching patients...');
@@ -569,8 +569,8 @@ app.post('/api/patients', async (req, res) => {
   }
 });
 
-// Catch all
-app.get('*', (req, res) => {
+// Catch all - MUST be last
+app.all('*', (req, res) => {
   res.status(404).json({ error: 'Rota não encontrada via index.js' });
 });
 

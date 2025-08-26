@@ -48,7 +48,8 @@
       "Bash(npm run test:*)",
       "Bash(npx next:*)",
       "Bash(mv:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []
