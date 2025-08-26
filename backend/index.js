@@ -494,6 +494,81 @@ app.get('/api/tenants/:slug/info', async (req, res) => {
   }
 });
 
+// Patients endpoints
+app.get('/api/patients', async (req, res) => {
+  try {
+    console.log('📋 Fetching patients...');
+    const patients = await prisma.patient.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    res.json({
+      success: true,
+      message: 'Pacientes carregados com sucesso',
+      data: {
+        data: patients,
+        total: patients.length
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching patients:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao carregar pacientes',
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/patients', async (req, res) => {
+  try {
+    console.log('👤 Creating patient:', req.body);
+    const patientData = req.body;
+    
+    // Ensure we have a default user - create if doesn't exist
+    let defaultUser = await prisma.user.findFirst({
+      where: { email: 'admin@fisiohub.app' }
+    });
+    
+    if (!defaultUser) {
+      console.log('🔧 Creating default user...');
+      defaultUser = await prisma.user.create({
+        data: {
+          id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          email: 'admin@fisiohub.app',
+          name: 'Sistema Padrão',
+          password: 'temp_hash', // placeholder
+          role: 'admin'
+        }
+      });
+      console.log('✅ Default user created:', defaultUser.id);
+    }
+    
+    const patient = await prisma.patient.create({
+      data: {
+        ...patientData,
+        id: `patient_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: defaultUser.id // Associate with default user
+      }
+    });
+    
+    console.log('✅ Patient created:', patient.id);
+    
+    res.json({
+      success: true,
+      message: 'Paciente criado com sucesso',
+      data: patient
+    });
+  } catch (error) {
+    console.error('Error creating patient:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao criar paciente',
+      error: error.message
+    });
+  }
+});
+
 // Catch all
 app.get('*', (req, res) => {
   res.status(404).json({ error: 'Rota não encontrada via index.js' });

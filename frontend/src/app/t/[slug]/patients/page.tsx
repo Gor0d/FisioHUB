@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,55 +17,49 @@ import {
   MoreVertical,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
-
-// Dados de exemplo - substituir por dados da API
-const mockPatients = [
-  {
-    id: 1,
-    name: 'Maria Santos',
-    email: 'maria@email.com',
-    phone: '(11) 99999-1234',
-    birthDate: '1985-03-15',
-    diagnosis: 'Lombalgia crônica',
-    createdAt: '2025-08-20',
-    status: 'Ativo'
-  },
-  {
-    id: 2,
-    name: 'João Silva',
-    email: 'joao@email.com',
-    phone: '(11) 99999-5678',
-    birthDate: '1978-07-22',
-    diagnosis: 'Artrose de joelho',
-    createdAt: '2025-08-18',
-    status: 'Ativo'
-  },
-  {
-    id: 3,
-    name: 'Ana Costa',
-    email: 'ana@email.com',
-    phone: '(11) 99999-9876',
-    birthDate: '1992-11-03',
-    diagnosis: 'Tendinite de ombro',
-    createdAt: '2025-08-15',
-    status: 'Inativo'
-  }
-];
+import { api } from '@/lib/api';
+import type { Patient } from '@/types';
 
 export default function PatientsPage() {
   const params = useParams();
   const [searchTerm, setSearchTerm] = useState('');
-  const [patients] = useState(mockPatients);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const slug = params?.slug as string;
 
+  // Fetch patients from API
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/api/patients');
+        
+        if (response.data.success) {
+          setPatients(response.data.data.data || []);
+        } else {
+          setError('Erro ao carregar pacientes');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar pacientes:', error);
+        setError('Erro de conexão com o servidor');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatients();
+  }, []);
+
   const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.diagnosis.toLowerCase().includes(searchTerm.toLowerCase())
+    patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (patient as any).diagnosis?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const calculateAge = (birthDate: string) => {
@@ -157,8 +151,35 @@ export default function PatientsPage() {
           </CardContent>
         </Card>
 
-        {/* Patients List */}
-        {filteredPatients.length === 0 ? (
+        {/* Loading State */}
+        {loading ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Loader2 className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+              <h3 className="font-semibold text-lg mb-2">Carregando pacientes...</h3>
+              <p className="text-muted-foreground">
+                Buscando dados no servidor...
+              </p>
+            </CardContent>
+          </Card>
+        ) : error ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <FileText className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="font-semibold text-lg mb-2 text-red-700">Erro ao carregar</h3>
+              <p className="text-muted-foreground mb-6">{error}</p>
+              <Button 
+                onClick={() => window.location.reload()}
+                variant="outline"
+              >
+                Tentar Novamente
+              </Button>
+            </CardContent>
+          </Card>
+        ) : 
+        
+        /* Patients List */
+        filteredPatients.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -196,28 +217,36 @@ export default function PatientsPage() {
                       <div className="space-y-1">
                         <h3 className="font-semibold text-lg">{patient.name}</h3>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {calculateAge(patient.birthDate)} anos
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-4 w-4" />
-                            {patient.phone}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-4 w-4" />
-                            {patient.email}
-                          </div>
+                          {patient.birthDate && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              {calculateAge(patient.birthDate)} anos
+                            </div>
+                          )}
+                          {patient.phone && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-4 w-4" />
+                              {patient.phone}
+                            </div>
+                          )}
+                          {patient.email && (
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-4 w-4" />
+                              {patient.email}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{patient.diagnosis}</span>
+                          <span className="text-sm">
+                            {(patient as any).diagnosis || (patient as any).medicalHistory || 'Sem diagnóstico'}
+                          </span>
                           <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                            patient.status === 'Ativo' 
+                            (patient as any).status === 'active' || (patient as any).status === 'Ativo'
                               ? 'bg-green-100 text-green-700' 
                               : 'bg-gray-100 text-gray-700'
                           }`}>
-                            {patient.status}
+                            {(patient as any).status === 'active' ? 'Ativo' : (patient as any).status || 'Inativo'}
                           </span>
                         </div>
                       </div>
@@ -251,8 +280,8 @@ export default function PatientsPage() {
             <div className="flex justify-between items-center text-sm text-muted-foreground">
               <span>Total: {filteredPatients.length} pacientes</span>
               <span>
-                Ativos: {filteredPatients.filter(p => p.status === 'Ativo').length} • 
-                Inativos: {filteredPatients.filter(p => p.status === 'Inativo').length}
+                Ativos: {filteredPatients.filter(p => (p as any).status === 'active' || (p as any).status === 'Ativo').length} • 
+                Inativos: {filteredPatients.filter(p => (p as any).status !== 'active' && (p as any).status !== 'Ativo').length}
               </span>
             </div>
           </CardContent>
