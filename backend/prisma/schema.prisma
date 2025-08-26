@@ -192,16 +192,17 @@ model User {
 
 // Pacientes
 model Patient {
-  id          String    @id @default(cuid())
-  name        String
-  email       String?
-  phone       String?
-  cpf         String?
-  birthDate   DateTime?
-  address     String?
-  diagnosis   String?
-  observations String?
-  isActive    Boolean   @default(true)
+  id               String    @id @default(cuid())
+  name             String
+  email            String?
+  phone            String?
+  attendanceNumber String?   // Número do atendimento
+  bedNumber        String?   // Leito do paciente
+  birthDate        DateTime?
+  address          String?
+  diagnosis        String?
+  observations     String?
+  isActive         Boolean   @default(true)
   
   // Responsável
   userId       String

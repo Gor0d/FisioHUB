@@ -59,7 +59,9 @@ export default function PatientsPage() {
   const filteredPatients = patients.filter(patient =>
     patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (patient as any).diagnosis?.toLowerCase().includes(searchTerm.toLowerCase())
+    (patient as any).diagnosis?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (patient as any).attendanceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (patient as any).bedNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const calculateAge = (birthDate: string) => {
@@ -131,7 +133,7 @@ export default function PatientsPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por nome, email ou diagnóstico..."
+                    placeholder="Buscar por nome, atendimento, leito, email ou diagnóstico..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -217,10 +219,16 @@ export default function PatientsPage() {
                       <div className="space-y-1">
                         <h3 className="font-semibold text-lg">{patient.name}</h3>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          {patient.birthDate && (
+                          {(patient as any).attendanceNumber && (
                             <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              {calculateAge(patient.birthDate)} anos
+                              <FileText className="h-4 w-4" />
+                              {(patient as any).attendanceNumber}
+                            </div>
+                          )}
+                          {(patient as any).bedNumber && (
+                            <div className="flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              Leito {(patient as any).bedNumber}
                             </div>
                           )}
                           {patient.phone && (
@@ -229,10 +237,10 @@ export default function PatientsPage() {
                               {patient.phone}
                             </div>
                           )}
-                          {patient.email && (
+                          {patient.birthDate && (
                             <div className="flex items-center gap-1">
-                              <Mail className="h-4 w-4" />
-                              {patient.email}
+                              <Calendar className="h-4 w-4" />
+                              {calculateAge(patient.birthDate)} anos
                             </div>
                           )}
                         </div>
@@ -242,11 +250,11 @@ export default function PatientsPage() {
                             {(patient as any).diagnosis || (patient as any).medicalHistory || 'Sem diagnóstico'}
                           </span>
                           <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                            (patient as any).status === 'active' || (patient as any).status === 'Ativo'
+                            patient.isActive 
                               ? 'bg-green-100 text-green-700' 
                               : 'bg-gray-100 text-gray-700'
                           }`}>
-                            {(patient as any).status === 'active' ? 'Ativo' : (patient as any).status || 'Inativo'}
+                            {patient.isActive ? 'Ativo' : 'Inativo'}
                           </span>
                         </div>
                       </div>
@@ -280,8 +288,8 @@ export default function PatientsPage() {
             <div className="flex justify-between items-center text-sm text-muted-foreground">
               <span>Total: {filteredPatients.length} pacientes</span>
               <span>
-                Ativos: {filteredPatients.filter(p => (p as any).status === 'active' || (p as any).status === 'Ativo').length} • 
-                Inativos: {filteredPatients.filter(p => (p as any).status !== 'active' && (p as any).status !== 'Ativo').length}
+                Ativos: {filteredPatients.filter(p => p.isActive).length} • 
+                Inativos: {filteredPatients.filter(p => !p.isActive).length}
               </span>
             </div>
           </CardContent>

@@ -25,7 +25,8 @@ interface PatientData {
   name: string;
   email: string;
   phone: string;
-  cpf: string;
+  attendanceNumber: string;
+  bedNumber: string;
   birthDate: string;
   address: string;
   diagnosis: string;
@@ -45,7 +46,8 @@ export default function NewPatientPage() {
     name: '',
     email: '',
     phone: '',
-    cpf: '',
+    attendanceNumber: '',
+    bedNumber: '',
     birthDate: '',
     address: '',
     diagnosis: '',
@@ -82,8 +84,8 @@ export default function NewPatientPage() {
       newErrors.email = 'Email inválido';
     }
 
-    if (patientData.cpf && !/^\d{11}$/.test(patientData.cpf.replace(/\D/g, ''))) {
-      newErrors.cpf = 'CPF deve ter 11 dígitos';
+    if (!patientData.attendanceNumber.trim()) {
+      newErrors.attendanceNumber = 'Número do atendimento é obrigatório';
     }
 
     setErrors(newErrors);
@@ -289,17 +291,39 @@ export default function NewPatientPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        CPF
+                        Número do Atendimento *
                       </label>
                       <Input
                         type="text"
-                        placeholder="000.000.000-00"
-                        value={patientData.cpf}
-                        onChange={(e) => updateField('cpf', e.target.value)}
-                        className={errors.cpf ? 'border-red-500' : ''}
+                        placeholder="ATD-2024-001"
+                        value={patientData.attendanceNumber}
+                        onChange={(e) => updateField('attendanceNumber', e.target.value)}
+                        className={errors.attendanceNumber ? 'border-red-500' : ''}
                       />
-                      {errors.cpf && (
-                        <p className="text-red-500 text-sm mt-1">{errors.cpf}</p>
+                      {errors.attendanceNumber && (
+                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4" />
+                          {errors.attendanceNumber}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Leito
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="101-A"
+                        value={patientData.bedNumber}
+                        onChange={(e) => updateField('bedNumber', e.target.value)}
+                        className={errors.bedNumber ? 'border-red-500' : ''}
+                      />
+                      {errors.bedNumber && (
+                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4" />
+                          {errors.bedNumber}
+                        </p>
                       )}
                     </div>
 
