@@ -186,6 +186,7 @@ model User {
   patients     Patient[]
   appointments Appointment[]
   evolutions   Evolution[]
+  bedTransfers BedTransfer[] // Transferências registradas
   
   @@map("users")
 }
@@ -197,12 +198,17 @@ model Patient {
   email            String?
   phone            String?
   attendanceNumber String?   // Número do atendimento
-  bedNumber        String?   // Leito do paciente
+  bedNumber        String?   // Leito atual do paciente
+  admissionDate    DateTime? // Data de internação
   birthDate        DateTime?
   address          String?
   diagnosis        String?
   observations     String?
+  
+  // Status e controle
   isActive         Boolean   @default(true)
+  dischargeDate    DateTime? // Data da alta
+  dischargeReason  String?   // Motivo da alta
   
   // Responsável
   userId       String
@@ -211,11 +217,34 @@ model Patient {
   // Relacionamentos
   appointments Appointment[]
   evolutions   Evolution[]
+  bedTransfers BedTransfer[] // Histórico de transferências
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
   @@map("patients")
+}
+
+// Transferências de leito
+model BedTransfer {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  fromBed     String?  // Leito de origem (null se primeira internação)
+  toBed       String   // Leito de destino
+  transferDate DateTime @default(now())
+  reason      String?  // Motivo da transferência (UTI, enfermaria, etc)
+  notes       String?  // Observações
+  
+  // Usuário que registrou
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("bed_transfers")
 }
 
 // Consultas

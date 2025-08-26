@@ -27,6 +27,7 @@ interface PatientData {
   phone: string;
   attendanceNumber: string;
   bedNumber: string;
+  admissionDate: string;  // Data de internação
   birthDate: string;
   address: string;
   diagnosis: string;
@@ -48,6 +49,7 @@ export default function NewPatientPage() {
     phone: '',
     attendanceNumber: '',
     bedNumber: '',
+    admissionDate: '',
     birthDate: '',
     address: '',
     diagnosis: '',
@@ -88,6 +90,10 @@ export default function NewPatientPage() {
       newErrors.attendanceNumber = 'Número do atendimento é obrigatório';
     }
 
+    if (!patientData.admissionDate.trim()) {
+      newErrors.admissionDate = 'Data de internação é obrigatória';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -103,7 +109,8 @@ export default function NewPatientPage() {
       // Integração com API real
       const patientPayload = {
         ...patientData,
-        birthDate: patientData.birthDate ? new Date(patientData.birthDate).toISOString() : null
+        birthDate: patientData.birthDate ? new Date(patientData.birthDate).toISOString() : null,
+        admissionDate: patientData.admissionDate ? new Date(patientData.admissionDate).toISOString() : null
       };
 
       console.log('Enviando paciente para API:', patientPayload);
@@ -323,6 +330,24 @@ export default function NewPatientPage() {
                         <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                           <AlertCircle className="h-4 w-4" />
                           {errors.bedNumber}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Data de Internação *
+                      </label>
+                      <Input
+                        type="datetime-local"
+                        value={patientData.admissionDate}
+                        onChange={(e) => updateField('admissionDate', e.target.value)}
+                        className={errors.admissionDate ? 'border-red-500' : ''}
+                      />
+                      {errors.admissionDate && (
+                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4" />
+                          {errors.admissionDate}
                         </p>
                       )}
                     </div>

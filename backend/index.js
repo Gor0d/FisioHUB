@@ -625,11 +625,14 @@ app.get('/api/patients', async (req, res) => {
           phone VARCHAR(255),
           "attendanceNumber" VARCHAR(255),
           "bedNumber" VARCHAR(255),
+          "admissionDate" TIMESTAMP,
           "birthDate" TIMESTAMP,
           address TEXT,
           diagnosis TEXT,
           observations TEXT,
           "isActive" BOOLEAN DEFAULT true,
+          "dischargeDate" TIMESTAMP,
+          "dischargeReason" TEXT,
           "userId" VARCHAR(255) NOT NULL,
           "createdAt" TIMESTAMP DEFAULT NOW(),
           "updatedAt" TIMESTAMP DEFAULT NOW(),
@@ -707,6 +710,153 @@ app.post('/api/patients', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erro ao criar paciente',
+      error: error.message
+    });
+  }
+});
+
+// Patient bed transfer endpoint
+app.post('/api/patients/:patientId/transfer', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const { fromBed, toBed, reason, notes } = req.body;
+    
+    console.log(`🏥 Transferring patient ${patientId} from ${fromBed} to ${toBed}`);
+    
+    // Ensure we have a default user
+    let defaultUser = await prisma.user.findFirst({
+      where: { email: 'admin@fisiohub.app' }
+    });
+    
+    if (!defaultUser) {
+      console.log('🔧 Creating default user...');
+      defaultUser = await prisma.user.create({
+        data: {
+          id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          email: 'admin@fisiohub.app',
+          name: 'Sistema Padrão',
+          password: 'temp_hash',
+          role: 'admin'
+        }
+      });
+    }
+    
+    // Create bed transfer table if not exists
+    try {
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS bed_transfers (
+          id VARCHAR(255) PRIMARY KEY,
+          "patientId" VARCHAR(255) NOT NULL,
+          "fromBed" VARCHAR(255),
+          "toBed" VARCHAR(255) NOT NULL,
+          "transferDate" TIMESTAMP DEFAULT NOW(),
+          reason TEXT,
+          notes TEXT,
+          "userId" VARCHAR(255) NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW(),
+          "updatedAt" TIMESTAMP DEFAULT NOW(),
+          FOREIGN KEY ("patientId") REFERENCES patients(id) ON DELETE CASCADE,
+          FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE
+        )
+      `;
+    } catch (createError) {
+      console.log('BedTransfer table creation skipped (may already exist)');
+    }
+    
+    // Get current patient
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId }
+    });
+    
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Paciente não encontrado'
+      });
+    }
+    
+    // Create bed transfer record  
+    const transfer = await prisma.$executeRaw`
+      INSERT INTO bed_transfers (id, "patientId", "fromBed", "toBed", reason, notes, "userId")
+      VALUES (${`transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`}, ${patientId}, ${fromBed}, ${toBed}, ${reason}, ${notes}, ${defaultUser.id})
+    `;
+    
+    // Update patient's current bed
+    await prisma.patient.update({
+      where: { id: patientId },
+      data: { bedNumber: toBed }
+    });
+    
+    console.log('✅ Patient transferred successfully');
+    
+    res.json({
+      success: true,
+      message: 'Transferência registrada com sucesso',
+      data: {
+        patientId,
+        fromBed,
+        toBed,
+        reason,
+        transferDate: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error transferring patient:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao transferir paciente',
+      error: error.message
+    });
+  }
+});
+
+// Patient discharge endpoint
+app.post('/api/patients/:patientId/discharge', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const { dischargeDate, dischargeReason, notes } = req.body;
+    
+    console.log(`🏥 Discharging patient ${patientId}`);
+    
+    // Get current patient
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId }
+    });
+    
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Paciente não encontrado'
+      });
+    }
+    
+    // Update patient with discharge information
+    await prisma.patient.update({
+      where: { id: patientId },
+      data: {
+        isActive: false,
+        dischargeDate: new Date(dischargeDate),
+        dischargeReason: dischargeReason
+      }
+    });
+    
+    console.log('✅ Patient discharged successfully');
+    
+    res.json({
+      success: true,
+      message: 'Alta registrada com sucesso',
+      data: {
+        patientId,
+        dischargeDate,
+        dischargeReason,
+        notes
+      }
+    });
+  } catch (error) {
+    console.error('Error discharging patient:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao dar alta ao paciente',
       error: error.message
     });
   }

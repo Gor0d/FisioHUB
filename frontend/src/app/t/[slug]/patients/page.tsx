@@ -23,6 +23,7 @@ import {
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import type { Patient } from '@/types';
+import { PatientActions } from '@/components/ui/patient-actions';
 
 export default function PatientsPage() {
   const params = useParams();
@@ -34,25 +35,25 @@ export default function PatientsPage() {
   const slug = params?.slug as string;
 
   // Fetch patients from API
-  useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/api/patients');
-        
-        if (response.data.success) {
-          setPatients(response.data.data.data || []);
-        } else {
-          setError('Erro ao carregar pacientes');
-        }
-      } catch (error) {
-        console.error('Erro ao carregar pacientes:', error);
-        setError('Erro de conexão com o servidor');
-      } finally {
-        setLoading(false);
+  const fetchPatients = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/patients');
+      
+      if (response.data.success) {
+        setPatients(response.data.data.data || []);
+      } else {
+        setError('Erro ao carregar pacientes');
       }
-    };
+    } catch (error) {
+      console.error('Erro ao carregar pacientes:', error);
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchPatients();
   }, []);
 
@@ -271,9 +272,10 @@ export default function PatientsPage() {
                         Editar
                       </Button>
                       
-                      <Button variant="outline" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <PatientActions 
+                        patient={patient}
+                        onUpdate={fetchPatients}
+                      />
                     </div>
                   </div>
                 </CardContent>
