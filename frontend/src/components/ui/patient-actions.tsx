@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { 
   MoreVertical, 
-  Transfer, 
+  ArrowRightLeft, 
   LogOut, 
   Eye,
   Edit,
@@ -146,7 +146,7 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
                     setTransferDialogOpen(true);
                   }}
                 >
-                  <Transfer className="h-4 w-4 mr-2" />
+                  <ArrowRightLeft className="h-4 w-4 mr-2" />
                   Transferir Leito
                 </button>
                 
