@@ -43,6 +43,7 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
 
   // Discharge form state  
   const [dischargeData, setDischargeData] = useState({
+    dischargeDate: new Date().toISOString().slice(0, 16), // Format for datetime-local input
     reason: '',
     notes: ''
   });
@@ -80,14 +81,18 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
     setLoading(true);
     try {
       const response = await api.post(`/api/patients/${patient.id}/discharge`, {
-        dischargeDate: new Date().toISOString(),
+        dischargeDate: new Date(dischargeData.dischargeDate).toISOString(),
         dischargeReason: dischargeData.reason,
         notes: dischargeData.notes
       });
 
       if (response.data.success) {
         setDischargeDialogOpen(false);
-        setDischargeData({ reason: '', notes: '' });
+        setDischargeData({ 
+          dischargeDate: new Date().toISOString().slice(0, 16),
+          reason: '', 
+          notes: '' 
+        });
         onUpdate(); // Refresh patient list
         alert('Alta registrada com sucesso!');
       }
@@ -262,6 +267,18 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
           </DialogHeader>
           
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Data e Hora da Alta *
+              </label>
+              <Input
+                type="datetime-local"
+                value={dischargeData.dischargeDate}
+                onChange={(e) => setDischargeData(prev => ({ ...prev, dischargeDate: e.target.value }))}
+                className="w-full"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-2">
                 Motivo da Alta *
