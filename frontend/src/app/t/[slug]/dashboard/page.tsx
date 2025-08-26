@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { tenantApi } from '@/lib/api';
+import { tenantApi, api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -31,41 +31,25 @@ interface TenantInfo {
   trialEndsAt?: string;
 }
 
-const dashboardStats = [
-  {
-    title: "Pacientes Ativos",
-    value: "0",
-    change: "+0%",
-    icon: Users,
-    color: "text-blue-600"
-  },
-  {
-    title: "Consultas Hoje",
-    value: "0", 
-    change: "+0%",
-    icon: Calendar,
-    color: "text-green-600"
-  },
-  {
-    title: "Avaliações",
-    value: "0",
-    change: "+0%",
-    icon: BarChart3,
-    color: "text-purple-600"
-  },
-  {
-    title: "Taxa de Melhora",
-    value: "0%",
-    change: "+0%",
-    icon: TrendingUp,
-    color: "text-orange-600"
-  }
-];
+interface DashboardStats {
+  activePatients: number;
+  inactivePatients: number;
+  todayAppointments: number;
+  totalEvaluations: number;
+  improvementRate: number;
+}
 
 export default function TenantDashboard() {
   const params = useParams();
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    activePatients: 0,
+    inactivePatients: 0,
+    todayAppointments: 0,
+    totalEvaluations: 0,
+    improvementRate: 0
+  });
 
   const slug = params?.slug as string;
 
@@ -127,12 +111,38 @@ export default function TenantDashboard() {
         trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
       });
       
+      // Fetch dashboard stats
+      fetchDashboardStats();
+      
       setLoading(false);
       
       // Optional: Try to fetch real data in background (non-blocking)
       fetchTenantInfo(slug);
     }
   }, [slug]);
+
+  const fetchDashboardStats = async () => {
+    try {
+      // Fetch patients data
+      const response = await api.get('/api/patients');
+      
+      if (response.data.success) {
+        const patients = response.data.data.data || [];
+        const activePatients = patients.filter((p: any) => p.isActive).length;
+        const inactivePatients = patients.filter((p: any) => !p.isActive).length;
+        
+        setStats({
+          activePatients,
+          inactivePatients,
+          todayAppointments: 0, // TODO: Add appointments API
+          totalEvaluations: 0,  // TODO: Add evaluations API
+          improvementRate: activePatients > 0 ? Math.round((activePatients / (activePatients + inactivePatients)) * 100) : 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
+  };
 
   const fetchTenantInfo = async (tenantSlug: string) => {
     try {
@@ -257,22 +267,74 @@ export default function TenantDashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {dashboardStats.map((stat, index) => (
-            <Card key={index}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                    <p className="text-xs text-green-600">{stat.change} vs. mês anterior</p>
-                  </div>
-                  <div className={`w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center ${stat.color}`}>
-                    <stat.icon className="h-6 w-6" />
-                  </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Pacientes Ativos</p>
+                  <p className="text-2xl font-bold">{stats.activePatients}</p>
+                  <p className="text-xs text-green-600">
+                    {stats.activePatients > 0 ? '+' : ''}
+                    {stats.activePatients - (stats.inactivePatients || 0)} vs. total
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-blue-600">
+                  <Users className="h-6 w-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Pacientes com Alta</p>
+                  <p className="text-2xl font-bold">{stats.inactivePatients}</p>
+                  <p className="text-xs text-blue-600">
+                    Total de altas registradas
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-green-600">
+                  <Calendar className="h-6 w-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total de Pacientes</p>
+                  <p className="text-2xl font-bold">{stats.activePatients + stats.inactivePatients}</p>
+                  <p className="text-xs text-purple-600">
+                    Cadastros no sistema
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-purple-600">
+                  <BarChart3 className="h-6 w-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Taxa de Ocupação</p>
+                  <p className="text-2xl font-bold">{stats.improvementRate}%</p>
+                  <p className="text-xs text-orange-600">
+                    Pacientes ativos/total
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-orange-600">
+                  <TrendingUp className="h-6 w-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
