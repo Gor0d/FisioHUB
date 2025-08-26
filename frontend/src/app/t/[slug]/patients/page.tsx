@@ -23,7 +23,7 @@ import {
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import type { Patient } from '@/types';
-import { PatientActions } from '@/components/ui/patient-actions';
+// import { PatientActions } from '@/components/ui/patient-actions';
 
 export default function PatientsPage() {
   const params = useParams();
@@ -272,10 +272,9 @@ export default function PatientsPage() {
                         Editar
                       </Button>
                       
-                      <PatientActions 
-                        patient={patient}
-                        onUpdate={fetchPatients}
-                      />
+                      <Button variant="outline" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
