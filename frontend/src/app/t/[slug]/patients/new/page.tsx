@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/toast';
 
 interface PatientData {
   name: string;
@@ -37,6 +38,7 @@ interface PatientData {
 export default function NewPatientPage() {
   const params = useParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
@@ -118,18 +120,27 @@ export default function NewPatientPage() {
 
       if (response.data.success) {
         console.log('Paciente criado com sucesso:', response.data.data);
-        setSuccess(true);
+        showToast({
+          type: 'success',
+          title: 'Paciente cadastrado!',
+          message: `${patientData.name} foi cadastrado com sucesso`
+        });
         
         // Redirecionar após sucesso
         setTimeout(() => {
           router.push(`/t/${slug}/patients`);
-        }, 2000);
+        }, 1500);
       } else {
         throw new Error(response.data.message || 'Erro ao salvar paciente');
       }
       
     } catch (error) {
       console.error('Erro ao salvar paciente:', error);
+      showToast({
+        type: 'error',
+        title: 'Erro no cadastro',
+        message: 'Erro ao salvar paciente. Tente novamente.'
+      });
       setErrors({ general: 'Erro ao salvar paciente. Tente novamente.' });
     } finally {
       setLoading(false);

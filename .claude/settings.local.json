@@ -50,7 +50,8 @@
       "Bash(mv:*)",
       "Bash(true)",
       "Bash(node:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(API_PORT=3003 npm start)"
     ],
     "deny": [],
     "ask": []

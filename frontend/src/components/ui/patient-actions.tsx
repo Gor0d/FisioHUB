@@ -23,6 +23,7 @@ import {
 import { api } from '@/lib/api';
 import type { Patient } from '@/types';
 import { useParams } from 'next/navigation';
+import { useToast } from '@/components/ui/toast';
 
 interface PatientActionsProps {
   patient: Patient;
@@ -32,6 +33,7 @@ interface PatientActionsProps {
 export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
   const params = useParams();
   const slug = params?.slug as string;
+  const { showToast } = useToast();
   const [showMenu, setShowMenu] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -82,11 +84,19 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
       if (response.data.success) {
         setEditDialogOpen(false);
         onUpdate(); // Refresh patient data
-        alert('Paciente atualizado com sucesso!');
+        showToast({
+          type: 'success',
+          title: 'Sucesso!',
+          message: 'Paciente atualizado com sucesso'
+        });
       }
     } catch (error) {
       console.error('Erro ao atualizar paciente:', error);
-      alert('Erro ao atualizar paciente. Tente novamente.');
+      showToast({
+        type: 'error',
+        title: 'Erro',
+        message: 'Erro ao atualizar paciente. Tente novamente.'
+      });
     } finally {
       setLoading(false);
     }
@@ -109,11 +119,19 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
         setTransferDialogOpen(false);
         setTransferData({ toBed: '', reason: '', notes: '' });
         onUpdate(); // Refresh patient data and history
-        alert('Transferência registrada com sucesso!');
+        showToast({
+          type: 'success',
+          title: 'Transferência realizada!',
+          message: `Paciente transferido para ${transferData.toBed} com sucesso`
+        });
       }
     } catch (error) {
       console.error('Erro ao transferir paciente:', error);
-      alert('Erro ao transferir paciente. Tente novamente.');
+      showToast({
+        type: 'error',
+        title: 'Erro na transferência',
+        message: 'Erro ao transferir paciente. Tente novamente.'
+      });
     } finally {
       setLoading(false);
     }
@@ -138,11 +156,19 @@ export function PatientActions({ patient, onUpdate }: PatientActionsProps) {
           notes: '' 
         });
         onUpdate(); // Refresh patient list
-        alert('Alta registrada com sucesso!');
+        showToast({
+          type: 'success',
+          title: 'Alta registrada!',
+          message: 'Paciente recebeu alta com sucesso'
+        });
       }
     } catch (error) {
       console.error('Erro ao dar alta ao paciente:', error);
-      alert('Erro ao dar alta ao paciente. Tente novamente.');
+      showToast({
+        type: 'error',
+        title: 'Erro na alta',
+        message: 'Erro ao dar alta ao paciente. Tente novamente.'
+      });
     } finally {
       setLoading(false);
     }

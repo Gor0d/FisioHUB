@@ -19,7 +19,7 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.API_PORT || process.env.PORT || 3001;
 
 // Initialize Prisma
 console.log('🔄 Initializing Prisma Client with DATABASE_URL...');
@@ -875,27 +875,7 @@ app.post('/api/patients/:patientId/transfer', async (req, res) => {
       });
     }
     
-    // Create bed transfer table if not exists
-    try {
-      await prisma.$executeRaw`
-        CREATE TABLE IF NOT EXISTS bed_transfers (
-          id VARCHAR(255) PRIMARY KEY,
-          "patientId" VARCHAR(255) NOT NULL,
-          "fromBed" VARCHAR(255),
-          "toBed" VARCHAR(255) NOT NULL,
-          "transferDate" TIMESTAMP DEFAULT NOW(),
-          reason TEXT,
-          notes TEXT,
-          "userId" VARCHAR(255) NOT NULL,
-          "createdAt" TIMESTAMP DEFAULT NOW(),
-          "updatedAt" TIMESTAMP DEFAULT NOW(),
-          FOREIGN KEY ("patientId") REFERENCES patients(id) ON DELETE CASCADE,
-          FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE
-        )
-      `;
-    } catch (createError) {
-      console.log('BedTransfer table creation skipped (may already exist)');
-    }
+    // Tables are managed by Prisma schema
     
     // Get current patient
     const patient = await prisma.patient.findUnique({
@@ -909,11 +889,19 @@ app.post('/api/patients/:patientId/transfer', async (req, res) => {
       });
     }
     
-    // Create bed transfer record  
-    const transfer = await prisma.$executeRaw`
-      INSERT INTO bed_transfers (id, "patientId", "fromBed", "toBed", reason, notes, "userId")
-      VALUES (${`transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`}, ${patientId}, ${fromBed}, ${toBed}, ${reason}, ${notes}, ${defaultUser.id})
-    `;
+    // Create bed transfer record using Prisma ORM
+    const transfer = await prisma.bedTransfer.create({
+      data: {
+        id: `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        patientId: patientId,
+        fromBed: fromBed,
+        toBed: toBed,
+        reason: reason,
+        notes: notes,
+        userId: defaultUser.id,
+        transferDate: new Date()
+      }
+    });
     
     // Update patient's current bed
     await prisma.patient.update({
