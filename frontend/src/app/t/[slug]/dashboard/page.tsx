@@ -69,43 +69,46 @@ export default function TenantDashboard() {
 
   const slug = params?.slug as string;
 
-  const quickActions = [
+  // Create quickActions function to ensure slug is available
+  const getQuickActions = (currentSlug: string) => [
     {
       title: "Novo Paciente",
       description: "Cadastrar um novo paciente no sistema",
       icon: Users,
-      href: `/t/${slug}/patients/new`,
+      href: `/t/${currentSlug}/patients/new`,
       color: "bg-blue-500"
     },
     {
       title: "Ver Pacientes",
       description: "Gerenciar pacientes cadastrados",
       icon: Users,
-      href: `/t/${slug}/patients`,
+      href: `/t/${currentSlug}/patients`,
       color: "bg-blue-600"
     },
     {
       title: "Agendar Consulta",
       description: "Marcar nova consulta ou sessão",
       icon: Calendar,
-      href: `/t/${slug}/appointments/new`,
+      href: `/t/${currentSlug}/appointments/new`,
       color: "bg-green-500"
     },
     {
       title: "Aplicar Escala",
       description: "Barthel, MRC ou indicadores customizados",
       icon: BarChart3,
-      href: `/t/${slug}/assessments/new`,
+      href: `/t/${currentSlug}/assessments/new`,
       color: "bg-purple-500"
     },
     {
       title: "Relatórios",
       description: "Visualizar dashboards e métricas",
       icon: Activity,
-      href: `/t/${slug}/reports`,
+      href: `/t/${currentSlug}/reports`,
       color: "bg-orange-500"
     }
   ];
+
+  const quickActions = slug ? getQuickActions(slug) : [];
 
   useEffect(() => {
     if (slug) {
