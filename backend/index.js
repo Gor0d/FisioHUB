@@ -362,18 +362,39 @@ app.post('/api/indicators', async (req, res) => {
   }
 });
 
-// Get indicators list - SIMPLE VERSION
-app.get('/api/indicators', (req, res) => {
-  console.log('🔥 GET /api/indicators OK!');
-  res.json({
-    success: true,
-    data: [],
-    total: 0,
-    message: 'Endpoint funcionando!'
-  });
+// Get indicators list
+app.get('/api/indicators', async (req, res) => {
+  try {
+    const { tenantId, patientId, type, limit = 50 } = req.query;
+    
+    const where = {};
+    if (tenantId) where.tenantId = tenantId;
+    if (patientId) where.patientId = patientId;
+    if (type) where.type = type;
+    
+    const indicators = await prisma.indicator.findMany({
+      where,
+      orderBy: {
+        measurementDate: 'desc'
+      },
+      take: parseInt(limit)
+    });
+    
+    res.json({
+      success: true,
+      data: indicators,
+      total: indicators.length
+    });
+  } catch (error) {
+    console.error('Erro ao buscar indicadores:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
 });
 
-// Dashboard with indicators data - SIMPLIFIED VERSION
+// Dashboard with indicators data
 app.get('/api/dashboard/:tenantId', async (req, res) => {
   try {
     const { tenantId } = req.params;
@@ -381,14 +402,154 @@ app.get('/api/dashboard/:tenantId', async (req, res) => {
     
     console.log(`📊 Dashboard request - Tenant: ${tenantId}, Period: ${period}`);
     
-    // Return empty dashboard first to ensure it works
+    // Calculate date range based on period
+    const now = new Date();
+    const dateFilter = new Date(now);
+    
+    switch(period) {
+      case '7d':
+        dateFilter.setDate(now.getDate() - 7);
+        break;
+      case '30d':
+        dateFilter.setDate(now.getDate() - 30);
+        break;
+      case '90d':
+        dateFilter.setDate(now.getDate() - 90);
+        break;
+      case '1y':
+        dateFilter.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        dateFilter.setDate(now.getDate() - 30);
+    }
+    
+    // Get indicators from database
+    const indicators = await prisma.indicator.findMany({
+      where: {
+        tenantId,
+        measurementDate: {
+          gte: dateFilter
+        }
+      },
+      orderBy: {
+        measurementDate: 'desc'
+      }
+    });
+    
+    console.log(`📊 Found ${indicators.length} indicators`);
+    
+    // Process indicators by type
     const dashboardData = {};
+    const indicatorTypes = {
+      early_mobilization: { name: 'Mobilização Precoce', unit: '%', target: 80, format: 'percentage', category: 'mobility' },
+      mechanical_ventilation: { name: 'Tempo Ventilação Mecânica', unit: 'dias', target: 5, format: 'decimal', category: 'respiratory' },
+      functional_independence: { name: 'Independência Funcional', unit: 'pontos', target: 85, format: 'integer', category: 'functional' },
+      muscle_strength: { name: 'Força Muscular', unit: 'pontos', target: 48, format: 'integer', category: 'strength' },
+      hospital_stay: { name: 'Tempo de Internação', unit: 'dias', target: 12, format: 'decimal', category: 'efficiency' },
+      readmission_30d: { name: 'Readmissão 30 dias', unit: '%', target: 8, format: 'percentage', category: 'quality' },
+      patient_satisfaction: { name: 'Satisfação do Paciente', unit: 'pontos', target: 9, format: 'decimal', category: 'satisfaction' },
+      discharge_destination: { name: 'Alta para Casa', unit: '%', target: 75, format: 'percentage', category: 'outcomes' }
+    };
+    
+    // Group indicators by type
+    const indicatorsByType = {};
+    indicators.forEach(indicator => {
+      if (!indicatorsByType[indicator.type]) {
+        indicatorsByType[indicator.type] = [];
+      }
+      indicatorsByType[indicator.type].push(indicator);
+    });
+    
+    // Process each indicator type
+    Object.keys(indicatorTypes).forEach(type => {
+      const typeConfig = indicatorTypes[type];
+      const typeIndicators = indicatorsByType[type] || [];
+      
+      if (typeIndicators.length > 0) {
+        // Calculate statistics
+        const values = typeIndicators.map(i => i.value);
+        const average = values.reduce((a, b) => a + b, 0) / values.length;
+        const latest = typeIndicators[0]; // Already ordered by desc date
+        
+        // Simple trend calculation (compare latest with previous)
+        let trend = 'stable';
+        if (typeIndicators.length > 1) {
+          const current = latest.value;
+          const previous = typeIndicators[1].value;
+          
+          // For indicators where higher is better
+          if (['early_mobilization', 'functional_independence', 'muscle_strength', 'patient_satisfaction', 'discharge_destination'].includes(type)) {
+            trend = current > previous ? 'up' : current < previous ? 'down' : 'stable';
+          } else {
+            // For indicators where lower is better
+            trend = current < previous ? 'up' : current > previous ? 'down' : 'stable';
+          }
+        }
+        
+        dashboardData[type] = {
+          config: typeConfig,
+          values: typeIndicators.map(i => ({
+            value: i.value,
+            date: i.measurementDate,
+            patientId: i.patientId
+          })),
+          latest: {
+            value: latest.value,
+            date: latest.measurementDate
+          },
+          average,
+          trend
+        };
+      } else {
+        // No data for this indicator type
+        dashboardData[type] = {
+          config: typeConfig,
+          values: [],
+          latest: null,
+          average: 0,
+          trend: 'stable'
+        };
+      }
+    });
+    
+    // Calculate summary statistics
+    const totalTypes = Object.keys(dashboardData).length;
+    const typesWithData = Object.values(dashboardData).filter(d => d.values.length > 0).length;
+    let onTarget = 0;
+    let improving = 0;
+    let deteriorating = 0;
+    
+    Object.entries(dashboardData).forEach(([type, data]) => {
+      if (data.latest) {
+        // Check if on target
+        const target = data.config.target;
+        const value = data.latest.value;
+        const tolerance = 0.1; // 10%
+        
+        let isOnTarget = false;
+        if (['readmission_30d', 'hospital_stay', 'mechanical_ventilation'].includes(type)) {
+          // Lower is better
+          isOnTarget = value <= target * (1 + tolerance);
+        } else {
+          // Higher is better
+          isOnTarget = value >= target * (1 - tolerance);
+        }
+        
+        if (isOnTarget) onTarget++;
+        
+        // Count trends
+        if (data.trend === 'up') improving++;
+        if (data.trend === 'down') deteriorating++;
+      }
+    });
+    
     const summary = {
-      total: 0,
-      onTarget: 0,
-      improving: 0,
-      deteriorating: 0,
-      performance: 0
+      total: totalTypes,
+      onTarget,
+      improving,
+      deteriorating,
+      stable: typesWithData - improving - deteriorating,
+      performance: typesWithData > 0 ? Math.round((onTarget / typesWithData) * 100) : 0
     };
     
     res.json({
