@@ -43,6 +43,18 @@ export function TenantProvider({ children }: TenantProviderProps) {
       setLoading(true);
       setError(null);
 
+      // FORCE Hospital Galileu mock data
+      if (slug === '0li0k7HNQslV') {
+        console.log('🏥 Hospital Galileu detected! Using mock data directly');
+        const mockData = getMockTenantData('0li0k7HNQslV');
+        if (mockData) {
+          const tenantContext = createTenantContext('0li0k7HNQslV', mockData);
+          setTenant(tenantContext);
+          setLoading(false);
+          return;
+        }
+      }
+
       let publicId: string;
       let tenantData: any;
 
@@ -52,17 +64,21 @@ export function TenantProvider({ children }: TenantProviderProps) {
         
         // Use secure endpoint for publicId
         try {
+          console.log('Fetching tenant data for publicId:', publicId);
           const response = await tenantApi.getInfoByPublicId(publicId);
+          console.log('API response:', response);
           if (response.success) {
             tenantData = response.data;
+            console.log('Got tenant data from API:', tenantData);
           }
         } catch (apiError: any) {
           console.error('Error fetching tenant by publicId:', apiError);
           
-          // Try to use mock data for known tenants
+          // ALWAYS try to use mock data for Hospital Galileu
+          console.log('Trying mock data for publicId:', publicId);
           const mockData = getMockTenantData(publicId);
           if (mockData) {
-            console.log('Using mock data for Hospital Galileu');
+            console.log('Using mock data for Hospital Galileu:', mockData);
             tenantData = mockData;
           } else {
             // If secure endpoint fails and no mock data, the publicId might be invalid
@@ -110,11 +126,12 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } catch (error: any) {
       console.error('Error fetching tenant:', error);
       
-      // Try to use mock data for Hospital Galileu if API is down
+      // ALWAYS try to use mock data for Hospital Galileu first
       if (publicId === '0li0k7HNQslV') {
-        console.log('API down, using mock data for Hospital Galileu');
+        console.log('Hospital Galileu detected, using mock data as fallback');
         const mockData = getMockTenantData(publicId!);
         if (mockData) {
+          console.log('Using mock data for Hospital Galileu:', mockData);
           const tenantContext = createTenantContext(publicId!, mockData);
           setTenant(tenantContext);
           setLoading(false);
