@@ -1056,44 +1056,36 @@ app.post('/api/admin/:tenantId/logo', upload.single('logo'), async (req, res) =>
 });
 
 // Custom dashboard with calculated indicators
-app.get('/api/indicators/custom-dashboard/:tenantId', async (req, res) => {
-  try {
-    const { tenantId } = req.params;
-    const { period = '30d' } = req.query;
-    
-    console.log(`🏥 Custom Dashboard request - Tenant: ${tenantId}, Period: ${period}`);
-    console.log('📊 Dashboard endpoint called successfully');
-    
-    // Return test data first to verify endpoint works
-    return res.json({
-      success: true,
-      data: {
-        period,
-        indicators: {
-          test: {
-            config: {
-              indicatorName: 'Test Indicator',
-              category: 'test',
-              unit: 'test'
-            },
-            value: 42,
-            trend: 'up',
-            isOnTarget: true,
-            needsAlert: false
-          }
-        },
-        summary: {
-          total: 1,
-          onTarget: 1,
-          needsAlert: 0,
-          performance: 100
+app.get('/api/indicators/custom-dashboard/:tenantId', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      period: req.query.period || '30d',
+      indicators: {
+        test: {
+          config: {
+            indicatorName: 'Test Indicator',
+            category: 'test',
+            unit: 'test'
+          },
+          value: 42,
+          trend: 'up',
+          isOnTarget: true,
+          needsAlert: false
         }
+      },
+      summary: {
+        total: 1,
+        onTarget: 1,
+        needsAlert: 0,
+        performance: 100
       }
-    });
-    
-    // Get indicator configurations directly (avoid HTTP call)
-    let configData;
-    if (tenantId === '0li0k7HNQslV') {
+    }
+  });
+});
+
+// DISABLED: Old complex dashboard endpoint 
+/*
       configData = {
         success: true,
         data: [
@@ -1268,7 +1260,7 @@ app.get('/api/indicators/custom-dashboard/:tenantId', async (req, res) => {
       error: error.message
     });
   }
-});
+*/
 
 // Helper functions for indicator calculations
 async function calculateAutomaticIndicator(tenantId, indicatorKey, period) {
