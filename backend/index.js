@@ -311,10 +311,18 @@ app.post('/api/indicators', async (req, res) => {
       });
     }
     
-    // Get indicator type configuration
-    const response = await fetch(`${process.env.API_URL || 'http://localhost:3001'}/api/indicators/types`);
-    const typesData = await response.json();
-    const indicatorConfig = typesData.data.config[type];
+    // Get indicator type configuration directly from the config object
+    const indicatorTypes = {
+      early_mobilization: { name: 'Mobilização Precoce', unit: '%', target: 80, format: 'percentage', category: 'mobility' },
+      mechanical_ventilation: { name: 'Tempo Ventilação Mecânica', unit: 'dias', target: 5, format: 'decimal', category: 'respiratory' },
+      functional_independence: { name: 'Independência Funcional', unit: 'pontos', target: 85, format: 'integer', category: 'functional' },
+      muscle_strength: { name: 'Força Muscular', unit: 'pontos', target: 48, format: 'integer', category: 'strength' },
+      hospital_stay: { name: 'Tempo de Internação', unit: 'dias', target: 12, format: 'decimal', category: 'efficiency' },
+      readmission_30d: { name: 'Readmissão 30 dias', unit: '%', target: 8, format: 'percentage', category: 'quality' },
+      patient_satisfaction: { name: 'Satisfação do Paciente', unit: 'pontos', target: 9, format: 'decimal', category: 'satisfaction' },
+      discharge_destination: { name: 'Alta para Casa', unit: '%', target: 75, format: 'percentage', category: 'outcomes' }
+    };
+    const indicatorConfig = indicatorTypes[type];
     
     if (!indicatorConfig) {
       return res.status(400).json({
