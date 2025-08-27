@@ -1062,6 +1062,34 @@ app.get('/api/indicators/custom-dashboard/:tenantId', async (req, res) => {
     const { period = '30d' } = req.query;
     
     console.log(`🏥 Custom Dashboard request - Tenant: ${tenantId}, Period: ${period}`);
+    console.log('📊 Dashboard endpoint called successfully');
+    
+    // Return test data first to verify endpoint works
+    return res.json({
+      success: true,
+      data: {
+        period,
+        indicators: {
+          test: {
+            config: {
+              indicatorName: 'Test Indicator',
+              category: 'test',
+              unit: 'test'
+            },
+            value: 42,
+            trend: 'up',
+            isOnTarget: true,
+            needsAlert: false
+          }
+        },
+        summary: {
+          total: 1,
+          onTarget: 1,
+          needsAlert: 0,
+          performance: 100
+        }
+      }
+    });
     
     // Get indicator configurations directly (avoid HTTP call)
     let configData;
