@@ -486,6 +486,37 @@ app.get('/api/ensure-indicators-table', async (req, res) => {
   }
 });
 
+// Test database connection
+app.get('/api/test-db', async (req, res) => {
+  try {
+    console.log('🔍 Testando conexão com banco...');
+    
+    // Try to count users
+    const userCount = await prisma.user.count();
+    console.log('✅ Usuários encontrados:', userCount);
+    
+    // Try to count indicators
+    const indicatorCount = await prisma.indicator.count();
+    console.log('✅ Indicadores encontrados:', indicatorCount);
+    
+    res.json({
+      success: true,
+      message: 'Conexão com banco funcionando!',
+      data: {
+        users: userCount,
+        indicators: indicatorCount
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erro na conexão:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro de conexão com banco',
+      error: error.message
+    });
+  }
+});
+
 // Generic not found
 app.use('*', (req, res) => {
   res.status(404).json({
