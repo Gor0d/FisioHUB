@@ -65,7 +65,7 @@ app.get('/api/secure/:publicId/info', (req, res) => {
   });
 });
 
-// Mock patients endpoint
+// Mock patients endpoints
 app.get('/api/patients', (req, res) => {
   res.json({
     success: true,
@@ -87,6 +87,48 @@ app.get('/api/patients', (req, res) => {
         admissionDate: '2025-08-26'
       }
     ]
+  });
+});
+
+// POST endpoint for creating new patients
+app.post('/api/patients', (req, res) => {
+  const { name, email, phone, attendanceNumber, bedNumber, admissionDate, birthDate, address, diagnosis, observations } = req.body;
+  
+  // Validate required fields
+  if (!name || !phone || !attendanceNumber || !admissionDate) {
+    return res.status(400).json({
+      success: false,
+      message: 'Campos obrigatórios: name, phone, attendanceNumber, admissionDate'
+    });
+  }
+  
+  // Generate a mock patient ID
+  const patientId = `patient_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+  
+  // Mock successful creation
+  const newPatient = {
+    id: patientId,
+    name,
+    email,
+    phone,
+    attendanceNumber,
+    bedNumber,
+    admissionDate,
+    birthDate,
+    address,
+    diagnosis,
+    observations,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  console.log('📝 Novo paciente criado:', newPatient);
+  
+  res.status(201).json({
+    success: true,
+    message: 'Paciente cadastrado com sucesso!',
+    data: newPatient
   });
 });
 
