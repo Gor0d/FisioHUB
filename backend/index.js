@@ -299,19 +299,19 @@ app.get('/api/indicators/types', (req, res) => {
 });
 
 // Create new indicator - ULTRA SIMPLIFIED FOR DEBUG
-app.post('/api/indicators', async (req, res) => {
-  console.log('🔥 ENDPOINT ALCANÇADO!');
+app.post('/api/indicators', (req, res) => {
+  console.log('🔥 POST ENDPOINT ALCANÇADO!');
   console.log('🔥 Request body:', req.body);
   
   res.json({
     success: true,
-    message: 'Debug: Endpoint funcionando!',
+    message: 'Debug: POST funcionando!',
     data: req.body
   });
 });
 
-// Get indicators list - SIMPLIFIED
-app.get('/api/indicators', async (req, res) => {
+// Get indicators list - ULTRA SIMPLIFIED
+app.get('/api/indicators', (req, res) => {
   console.log('🔥 GET /api/indicators ALCANÇADO!');
   
   res.json({
