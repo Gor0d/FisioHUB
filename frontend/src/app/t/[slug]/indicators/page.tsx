@@ -75,7 +75,7 @@ const CATEGORY_COLORS = {
 };
 
 export default function IndicatorsPage() {
-  const { tenant, isLoading: tenantLoading } = useTenant();
+  const { tenant, loading: tenantLoading } = useTenant();
   const [dashboardData, setDashboardData] = useState<Record<string, IndicatorData>>({});
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +94,7 @@ export default function IndicatorsPage() {
         ...(selectedCategory && { category: selectedCategory })
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${tenant.id}?${params}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/${tenant.publicId}?${params}`);
       
       if (!response.ok) {
         throw new Error('Erro ao carregar dashboard');
@@ -215,14 +215,36 @@ export default function IndicatorsPage() {
 
       {/* Period and Category Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <Tabs value={selectedPeriod} onValueChange={setSelectedPeriod}>
-          <TabsList>
-            <TabsTrigger value="7d">7 dias</TabsTrigger>
-            <TabsTrigger value="30d">30 dias</TabsTrigger>
-            <TabsTrigger value="90d">90 dias</TabsTrigger>
-            <TabsTrigger value="1y">1 ano</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex gap-2">
+          <Button 
+            variant={selectedPeriod === '7d' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedPeriod('7d')}
+          >
+            7 dias
+          </Button>
+          <Button 
+            variant={selectedPeriod === '30d' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedPeriod('30d')}
+          >
+            30 dias
+          </Button>
+          <Button 
+            variant={selectedPeriod === '90d' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedPeriod('90d')}
+          >
+            90 dias
+          </Button>
+          <Button 
+            variant={selectedPeriod === '1y' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedPeriod('1y')}
+          >
+            1 ano
+          </Button>
+        </div>
 
         <div className="flex gap-2 flex-wrap">
           <Badge 

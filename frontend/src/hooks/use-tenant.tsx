@@ -127,12 +127,12 @@ export function TenantProvider({ children }: TenantProviderProps) {
       console.error('Error fetching tenant:', error);
       
       // ALWAYS try to use mock data for Hospital Galileu first
-      if (publicId === '0li0k7HNQslV') {
+      if (slug === '0li0k7HNQslV') {
         console.log('Hospital Galileu detected, using mock data as fallback');
-        const mockData = getMockTenantData(publicId);
+        const mockData = getMockTenantData(slug);
         if (mockData) {
           console.log('Using mock data for Hospital Galileu:', mockData);
-          const tenantContext = createTenantContext(publicId, mockData);
+          const tenantContext = createTenantContext(slug, mockData);
           setTenant(tenantContext);
           setLoading(false);
           return;

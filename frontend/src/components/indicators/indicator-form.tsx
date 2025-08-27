@@ -88,7 +88,7 @@ export default function IndicatorForm({ open, onOpenChange, onSuccess }: Indicat
   };
 
   const loadPatients = async () => {
-    if (!tenant?.id) return;
+    if (!tenant?.publicId) return;
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients?status=active&limit=50`);
@@ -130,7 +130,7 @@ export default function IndicatorForm({ open, onOpenChange, onSuccess }: Indicat
 
     try {
       const payload = {
-        tenantId: tenant.id,
+        tenantId: tenant.publicId,
         type: formData.type,
         value: Number(formData.value),
         patientId: formData.patientId || null,

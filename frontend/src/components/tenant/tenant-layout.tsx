@@ -10,9 +10,9 @@ interface TenantLayoutProps {
 
 export default function TenantLayout({ children }: TenantLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { isLoading } = useTenant();
+  const { loading } = useTenant();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
