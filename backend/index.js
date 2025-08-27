@@ -11,6 +11,33 @@ const prisma = new PrismaClient();
 // Default user ID for demo (in production this would come from authentication)
 const DEFAULT_USER_ID = 'demo_user_001';
 
+// Ensure default user exists
+async function ensureDefaultUser() {
+  try {
+    let user = await prisma.user.findUnique({
+      where: { id: DEFAULT_USER_ID }
+    });
+    
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          id: DEFAULT_USER_ID,
+          email: 'demo@fisiohub.app',
+          name: 'Sistema Demo',
+          password: 'demo_password',
+          role: 'admin'
+        }
+      });
+      console.log('✅ Usuário padrão criado:', user);
+    }
+  } catch (error) {
+    console.log('ℹ️ Usuário padrão já existe ou erro:', error.message);
+  }
+}
+
+// Initialize default user on startup
+ensureDefaultUser();
+
 // Basic middleware
 app.use(cors());
 app.use(express.json());
@@ -160,9 +187,26 @@ app.post('/api/patients', async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao criar paciente:', error);
+    
+    // Provide more specific error messages
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: 'Dados duplicados encontrados'
+      });
+    }
+    
+    if (error.code === 'P2003') {
+      return res.status(400).json({
+        success: false,
+        message: 'Referência inválida - usuário não encontrado'
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
