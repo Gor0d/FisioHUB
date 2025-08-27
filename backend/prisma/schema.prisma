@@ -16,6 +16,7 @@ model Tenant {
   id            String   @id @default(cuid())
   name          String
   slug          String   @unique
+  publicId      String   @unique // ID público para URLs seguras (12 chars base64url)
   subdomain     String?  @unique
   customDomain  String?  @unique
   email         String
