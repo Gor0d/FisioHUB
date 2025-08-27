@@ -17,6 +17,7 @@ const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const SlugSecurity = require('./utils/slug-security');
 
 const app = express();
 const port = process.env.API_PORT || process.env.PORT || 3001;
@@ -64,6 +65,7 @@ app.get('/', (req, res) => {
       health: '/health',
       register: 'POST /api/tenants/register',
       tenantInfo: 'GET /api/tenants/:slug/info',
+      secureAccess: 'GET /api/secure/:publicId/info',
       dbTest: '/api/db-test',
       migrate: 'POST /api/migrate'
     },
@@ -232,6 +234,7 @@ app.post('/api/migrate', async (req, res) => {
         id VARCHAR(255) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         slug VARCHAR(255) UNIQUE NOT NULL,
+        "publicId" VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255) NOT NULL,
         status VARCHAR(50) DEFAULT 'trial',
         plan VARCHAR(50) DEFAULT 'basic',
@@ -375,11 +378,17 @@ app.post('/api/tenants/register', async (req, res) => {
       // Create tenant in database
       console.log('🔍 Creating tenant in database...');
       const tenantId = `tenant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Generate secure public ID for URL
+      const publicId = SlugSecurity.generatePublicId(slug);
+      console.log(`🔐 Generated public ID: ${publicId} for slug: ${slug}`);
+      
       const tenant = await prisma.tenant.create({
         data: {
           id: tenantId,
           name,
           slug,
+          publicId,
           email,
           status: 'trial',
           plan: 'professional',
@@ -415,6 +424,7 @@ app.post('/api/tenants/register', async (req, res) => {
             id: tenant.id,
             name: tenant.name,
             slug: tenant.slug,
+            publicId: tenant.publicId,
             status: tenant.status,
             plan: tenant.plan,
             createdAt: tenant.createdAt,
@@ -464,6 +474,68 @@ app.post('/api/tenants/register', async (req, res) => {
     
   } catch (error) {
     console.error('Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Secure tenant access by publicId
+app.get('/api/secure/:publicId/info', async (req, res) => {
+  const publicId = req.params.publicId;
+  
+  try {
+    // Validate public ID format
+    if (!SlugSecurity.isValidPublicId(publicId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID público inválido'
+      });
+    }
+
+    // Try to find tenant by publicId
+    try {
+      const tenant = await prisma.tenant.findFirst({
+        where: { publicId }
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          success: false,
+          message: 'Organização não encontrada'
+        });
+      }
+
+      // Check if tenant is active
+      if (!tenant.isActive) {
+        return res.status(403).json({
+          success: false,
+          message: 'Organização inativa'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          id: tenant.id,
+          name: tenant.name,
+          publicId: tenant.publicId,
+          status: tenant.status,
+          plan: tenant.plan,
+          isActive: tenant.isActive,
+          // Don't expose the real slug for security
+          metadata: tenant.metadata
+        }
+      });
+
+    } catch (dbError) {
+      console.error('Database error in secure access:', dbError);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error in secure access:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

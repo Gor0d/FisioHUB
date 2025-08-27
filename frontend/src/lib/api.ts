@@ -59,6 +59,11 @@ export const tenantApi = {
     const response = await api.get(`/api/tenants/${slug}/info`);
     return response.data;
   },
+
+  getInfoByPublicId: async (publicId: string) => {
+    const response = await api.get(`/api/secure/${publicId}/info`);
+    return response.data;
+  },
 };
 
 export { api };
