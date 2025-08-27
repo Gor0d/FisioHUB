@@ -298,13 +298,68 @@ app.get('/api/indicators/types', (req, res) => {
   });
 });
 
-// Create new indicator - ULTRA SIMPLE VERSION
-app.post('/api/indicators', (req, res) => {  
-  res.status(201).json({
-    success: true,
-    message: 'Indicador registrado!',
-    data: { id: 'temp_123', tenantId: req.body.tenantId }
-  });
+// Create new indicator
+app.post('/api/indicators', async (req, res) => {
+  try {
+    const { tenantId, type, value, targetValue, patientId, measurementDate, metadata } = req.body;
+    
+    // Validate required fields
+    if (!tenantId || !type || value === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Campos obrigatórios: tenantId, type, value'
+      });
+    }
+    
+    // Get indicator type configuration
+    const indicatorTypes = {
+      early_mobilization: { name: 'Mobilização Precoce', unit: '%', target: 80, format: 'percentage', category: 'mobility' },
+      mechanical_ventilation: { name: 'Tempo Ventilação Mecânica', unit: 'dias', target: 5, format: 'decimal', category: 'respiratory' },
+      functional_independence: { name: 'Independência Funcional', unit: 'pontos', target: 85, format: 'integer', category: 'functional' },
+      muscle_strength: { name: 'Força Muscular', unit: 'pontos', target: 48, format: 'integer', category: 'strength' },
+      hospital_stay: { name: 'Tempo de Internação', unit: 'dias', target: 12, format: 'decimal', category: 'efficiency' },
+      readmission_30d: { name: 'Readmissão 30 dias', unit: '%', target: 8, format: 'percentage', category: 'quality' },
+      patient_satisfaction: { name: 'Satisfação do Paciente', unit: 'pontos', target: 9, format: 'decimal', category: 'satisfaction' },
+      discharge_destination: { name: 'Alta para Casa', unit: '%', target: 75, format: 'percentage', category: 'outcomes' }
+    };
+    const indicatorConfig = indicatorTypes[type];
+    
+    if (!indicatorConfig) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tipo de indicador inválido'
+      });
+    }
+    
+    // Create indicator in database
+    const newIndicator = await prisma.indicator.create({
+      data: {
+        tenantId,
+        type,
+        value: parseFloat(value),
+        targetValue: targetValue || indicatorConfig.target,
+        unit: indicatorConfig.unit,
+        patientId: patientId || null,
+        measurementDate: measurementDate ? new Date(measurementDate) : new Date(),
+        metadata: metadata ? JSON.stringify(metadata) : null,
+        createdBy: DEFAULT_USER_ID
+      }
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Indicador registrado com sucesso!',
+      data: newIndicator
+    });
+  } catch (error) {
+    console.error('Erro ao criar indicador:', error);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 // Get indicators list - SIMPLE VERSION
@@ -410,6 +465,31 @@ app.get('/api/test-db', async (req, res) => {
       message: 'Erro de conexão com banco',
       error: error.message
     });
+  }
+});
+
+// Create default user endpoint
+app.post('/api/ensure-user', async (req, res) => {
+  try {
+    let user = await prisma.user.findUnique({
+      where: { id: DEFAULT_USER_ID }
+    });
+    
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          id: DEFAULT_USER_ID,
+          email: 'demo@fisiohub.app',
+          name: 'Sistema Demo',
+          password: 'demo_password',
+          role: 'admin'
+        }
+      });
+    }
+    
+    res.json({ success: true, message: 'Usuário padrão garantido', data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
