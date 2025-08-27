@@ -354,7 +354,9 @@ app.post('/api/indicators', async (req, res) => {
       data: newIndicator
     });
   } catch (error) {
-    console.error('Erro ao criar indicador:', error);
+    console.error('❌ Erro ao criar indicador:', error);
+    console.error('❌ Error details:', error.message);
+    console.error('❌ Error code:', error.code);
     
     if (error.code === 'P2002') {
       return res.status(409).json({
@@ -445,6 +447,33 @@ app.get('/api/dashboard/:tenantId', async (req, res) => {
       message: 'Erro interno do servidor',
       error: error.message
     });
+  }
+});
+
+// Temporary endpoint to ensure indicators table exists
+app.get('/api/ensure-indicators-table', async (req, res) => {
+  try {
+    // Try to run a simple query to check if indicators table exists
+    await prisma.$queryRaw`CREATE TABLE IF NOT EXISTS "indicators" (
+      "id" TEXT NOT NULL,
+      "tenantId" TEXT NOT NULL,
+      "patientId" TEXT,
+      "type" TEXT NOT NULL,
+      "value" DOUBLE PRECISION NOT NULL,
+      "targetValue" DOUBLE PRECISION NOT NULL,
+      "unit" TEXT NOT NULL,
+      "measurementDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "metadata" TEXT,
+      "createdBy" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      CONSTRAINT "indicators_pkey" PRIMARY KEY ("id")
+    );`;
+    
+    res.json({ success: true, message: 'Tabela indicators verificada/criada' });
+  } catch (error) {
+    console.error('Erro ao criar tabela indicators:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
