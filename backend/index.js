@@ -298,87 +298,16 @@ app.get('/api/indicators/types', (req, res) => {
   });
 });
 
-// Create new indicator
+// Create new indicator - ULTRA SIMPLIFIED FOR DEBUG
 app.post('/api/indicators', async (req, res) => {
-  try {
-    console.log('📊 Recebendo POST /api/indicators');
-    console.log('📊 Body:', req.body);
-    
-    const { tenantId, type, value, targetValue, patientId, measurementDate, metadata } = req.body;
-    
-    // Validate required fields
-    if (!tenantId || !type || value === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'Campos obrigatórios: tenantId, type, value'
-      });
-    }
-    
-    // Get indicator type configuration directly from the config object
-    const indicatorTypes = {
-      early_mobilization: { name: 'Mobilização Precoce', unit: '%', target: 80, format: 'percentage', category: 'mobility' },
-      mechanical_ventilation: { name: 'Tempo Ventilação Mecânica', unit: 'dias', target: 5, format: 'decimal', category: 'respiratory' },
-      functional_independence: { name: 'Independência Funcional', unit: 'pontos', target: 85, format: 'integer', category: 'functional' },
-      muscle_strength: { name: 'Força Muscular', unit: 'pontos', target: 48, format: 'integer', category: 'strength' },
-      hospital_stay: { name: 'Tempo de Internação', unit: 'dias', target: 12, format: 'decimal', category: 'efficiency' },
-      readmission_30d: { name: 'Readmissão 30 dias', unit: '%', target: 8, format: 'percentage', category: 'quality' },
-      patient_satisfaction: { name: 'Satisfação do Paciente', unit: 'pontos', target: 9, format: 'decimal', category: 'satisfaction' },
-      discharge_destination: { name: 'Alta para Casa', unit: '%', target: 75, format: 'percentage', category: 'outcomes' }
-    };
-    const indicatorConfig = indicatorTypes[type];
-    
-    if (!indicatorConfig) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tipo de indicador inválido'
-      });
-    }
-    
-    console.log('📊 Configuração do indicador:', indicatorConfig);
-    
-    // TEMPORARY: Skip database insertion to test if table exists
-    console.log('⚠️ Simulando criação do indicador (sem banco por agora)');
-    
-    const mockIndicator = {
-      id: 'temp_' + Date.now(),
-      tenantId,
-      type,
-      value: parseFloat(value),
-      targetValue: targetValue || indicatorConfig.target,
-      unit: indicatorConfig.unit,
-      patientId: patientId || null,
-      measurementDate: measurementDate ? new Date(measurementDate) : new Date(),
-      metadata: metadata ? JSON.stringify(metadata) : null,
-      createdBy: DEFAULT_USER_ID,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    console.log('✅ Indicador simulado criado:', mockIndicator);
-    
-    res.status(201).json({
-      success: true,
-      message: 'Indicador registrado com sucesso!',
-      data: mockIndicator
-    });
-  } catch (error) {
-    console.error('❌ Erro ao criar indicador:', error);
-    console.error('❌ Error details:', error.message);
-    console.error('❌ Error code:', error.code);
-    
-    if (error.code === 'P2002') {
-      return res.status(409).json({
-        success: false,
-        message: 'Indicador duplicado'
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
+  console.log('🔥 ENDPOINT ALCANÇADO!');
+  console.log('🔥 Request body:', req.body);
+  
+  res.json({
+    success: true,
+    message: 'Debug: Endpoint funcionando!',
+    data: req.body
+  });
 });
 
 // Get indicators list
