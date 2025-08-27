@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================
+// MULTITENANCY TABLES (Public Schema)
+// ================================
+
+// Tenants (Clientes SaaS)
+model Tenant {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  subdomain     String?  @unique
+  customDomain  String?  @unique
+  email         String
+  logoUrl       String?
+  
+  // Status e configurações
+  status        String   @default("trial") // trial, active, suspended, cancelled
+  plan          String   @default("basic") // basic, professional, enterprise
+  billingEmail  String?
+  
+  // Período de trial
+  trialEndsAt   DateTime?
+  
+  // Controle de atividade
+  isActive      Boolean  @default(true)
+  lastActivityAt DateTime @default(now())
+  
+  // Metadados
+  metadata      Json?  // JSON para configurações customizadas
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relacionamentos
+  globalUsers   GlobalUser[]
+  subscriptions TenantSubscription[]
+  
+  @@map("tenants")
+}
+
+// Usuários globais (administradores de tenant)
+model GlobalUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("admin") // admin, owner
+  isActive  Boolean  @default(true)
+  
+  // Tenant que o usuário administra
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Metadados
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("global_users")
+}
+
+// Planos disponíveis
+model Plan {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  
+  // Preços
+  monthlyPrice  Float
+  yearlyPrice   Float?
+  
+  // Limites
+  maxUsers      Int      @default(10)
+  maxHospitals  Int      @default(1)
+  maxStorage    Int      @default(1000) // MB
+  
+  // Funcionalidades (JSON)
+  features      Json
+  
+  // Configurações
+  isActive      Boolean  @default(true)
+  isPopular     Boolean  @default(false)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relacionamentos
+  subscriptions TenantSubscription[]
+  
+  @@map("plans")
+}
+
+// Assinaturas dos tenants
+model TenantSubscription {
+  id        String   @id @default(cuid())
+  
+  // Tenant e plano
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  planId    String
+  plan      Plan     @relation(fields: [planId], references: [id])
+  
+  // Status da assinatura
+  status    String   @default("active") // active, cancelled, past_due
+  
+  // Período
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  
+  // Billing
+  stripeCustomerId      String?
+  stripeSubscriptionId  String? @unique
+  
+  // Controle
+  cancelAtPeriodEnd     Boolean @default(false)
+  cancelledAt          DateTime?
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@map("tenant_subscriptions")
+}
+
+// Convites para usuários
+model UserInvite {
+  id       String   @id @default(cuid())
+  email    String
+  name     String?
+  role     String   @default("user")
+  token    String   @unique
+  
+  // Tenant context
+  tenantId     String
+  invitedBy    String   // GlobalUser ID
+  
+  // Status
+  status       String   @default("pending") // pending, accepted, expired, cancelled
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  
+  // Contexto adicional (hospital, serviço, etc)
+  metadata     Json?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@map("user_invites")
+}
+
+// ================================
+// SCHEMA TENANT (tabelas replicadas por tenant)
+// ================================
+// As tabelas abaixo existem em cada schema de tenant
+
+// Usuários do tenant
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("user") // admin, doctor, nurse, therapist, user
+  
+  // Dados pessoais
+  crf       String?
+  phone     String?
+  specialty String?
+  
+  // Status
+  isActive  Boolean  @default(true)
+  
+  // Controle
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relacionamentos
+  patients     Patient[]
+  appointments Appointment[]
+  evolutions   Evolution[]
+  bedTransfers BedTransfer[] // Transferências registradas
+  
+  @@map("users")
+}
+
+// Pacientes
+model Patient {
+  id               String    @id @default(cuid())
+  name             String
+  email            String?
+  phone            String?
+  attendanceNumber String?   // Número do atendimento
+  bedNumber        String?   // Leito atual do paciente
+  admissionDate    DateTime? // Data de internação
+  birthDate        DateTime?
+  address          String?
+  diagnosis        String?
+  observations     String?
+  
+  // Status e controle
+  isActive         Boolean   @default(true)
+  dischargeDate    DateTime? // Data da alta
+  dischargeReason  String?   // Motivo da alta
+  
+  // Responsável
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  
+  // Relacionamentos
+  appointments Appointment[]
+  evolutions   Evolution[]
+  bedTransfers BedTransfer[] // Histórico de transferências
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("patients")
+}
+
+// Transferências de leito
+model BedTransfer {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  fromBed     String?  // Leito de origem (null se primeira internação)
+  toBed       String   // Leito de destino
+  transferDate DateTime @default(now())
+  reason      String?  // Motivo da transferência (UTI, enfermaria, etc)
+  notes       String?  // Observações
+  
+  // Usuário que registrou
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("bed_transfers")
+}
+
+// Consultas
+model Appointment {
+  id          String            @id @default(cuid())
+  date        DateTime
+  duration    Int               @default(60)
+  status      AppointmentStatus @default(SCHEDULED)
+  notes       String?
+  price       Float?
+  
+  // Relacionamentos
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  patientId String
+  patient   Patient   @relation(fields: [patientId], references: [id])
+  evolution Evolution?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("appointments")
+}
+
+// Evoluções
+model Evolution {
+  id           String   @id @default(cuid())
+  symptoms     String?
+  treatment    String?
+  observations String?
+  exercises    String?
+  nextSteps    String?
+  
+  // Relacionamentos
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  patientId     String
+  patient       Patient     @relation(fields: [patientId], references: [id])
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@map("evolutions")
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}

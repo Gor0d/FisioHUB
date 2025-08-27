@@ -18,7 +18,10 @@ import {
   Eye,
   Edit,
   Trash2,
-  Loader2
+  Loader2,
+  Filter,
+  X,
+  ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
@@ -28,6 +31,9 @@ import { PatientActions } from '@/components/ui/patient-actions';
 export default function PatientsPage() {
   const params = useParams();
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [showFilters, setShowFilters] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,13 +63,44 @@ export default function PatientsPage() {
     fetchPatients();
   }, []);
 
-  const filteredPatients = patients.filter(patient =>
-    patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (patient as any).diagnosis?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (patient as any).attendanceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (patient as any).bedNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Advanced filtering logic
+  const filteredPatients = patients.filter(patient => {
+    // Search term filter
+    const matchesSearch = !searchTerm || (
+      patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (patient as any).diagnosis?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (patient as any).attendanceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (patient as any).bedNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    // Status filter
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'active' && patient.isActive) ||
+      (statusFilter === 'inactive' && !patient.isActive);
+    
+    // Date filter (admission date)
+    let matchesDate = true;
+    if (dateFilter !== 'all' && (patient as any).admissionDate) {
+      const admissionDate = new Date((patient as any).admissionDate);
+      const today = new Date();
+      const daysDiff = Math.floor((today.getTime() - admissionDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      switch (dateFilter) {
+        case 'today':
+          matchesDate = daysDiff === 0;
+          break;
+        case 'week':
+          matchesDate = daysDiff <= 7;
+          break;
+        case 'month':
+          matchesDate = daysDiff <= 30;
+          break;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
   const calculateAge = (birthDate: string) => {
     const today = new Date();
@@ -129,27 +166,115 @@ export default function PatientsPage() {
         {/* Search and Filters */}
         <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nome, atendimento, leito, email ou diagnóstico..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+            <div className="flex flex-col gap-4">
+              {/* Search Bar */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nome, atendimento, leito, email ou diagnóstico..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant={showFilters ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtros
+                    <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    Exportar
+                  </Button>
                 </div>
               </div>
-              
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  Filtros
-                </Button>
-                <Button variant="outline" size="sm">
-                  Exportar
-                </Button>
-              </div>
+
+              {/* Advanced Filters */}
+              {showFilters && (
+                <div className="border-t pt-4 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Status Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Status</label>
+                      <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                        className="w-full p-2 border border-input rounded-md bg-background text-sm"
+                      >
+                        <option value="all">Todos os pacientes</option>
+                        <option value="active">Somente ativos</option>
+                        <option value="inactive">Somente inativos</option>
+                      </select>
+                    </div>
+
+                    {/* Date Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Data de Internação</label>
+                      <select 
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value as any)}
+                        className="w-full p-2 border border-input rounded-md bg-background text-sm"
+                      >
+                        <option value="all">Todas as datas</option>
+                        <option value="today">Hoje</option>
+                        <option value="week">Última semana</option>
+                        <option value="month">Último mês</option>
+                      </select>
+                    </div>
+
+                    {/* Clear Filters */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Ações</label>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => {
+                          setSearchTerm('');
+                          setStatusFilter('all');
+                          setDateFilter('all');
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Limpar Filtros
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Active Filters Summary */}
+                  <div className="flex flex-wrap gap-2">
+                    {searchTerm && (
+                      <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                        Busca: "{searchTerm}"
+                        <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchTerm('')} />
+                      </span>
+                    )}
+                    {statusFilter !== 'all' && (
+                      <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                        Status: {statusFilter === 'active' ? 'Ativos' : 'Inativos'}
+                        <X className="h-3 w-3 cursor-pointer" onClick={() => setStatusFilter('all')} />
+                      </span>
+                    )}
+                    {dateFilter !== 'all' && (
+                      <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                        Data: {
+                          dateFilter === 'today' ? 'Hoje' :
+                          dateFilter === 'week' ? 'Última semana' : 'Último mês'
+                        }
+                        <X className="h-3 w-3 cursor-pointer" onClick={() => setDateFilter('all')} />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -289,12 +414,26 @@ export default function PatientsPage() {
         {/* Stats Footer */}
         <Card className="mt-8">
           <CardContent className="p-4">
-            <div className="flex justify-between items-center text-sm text-muted-foreground">
-              <span>Total: {filteredPatients.length} pacientes</span>
-              <span>
-                Ativos: {filteredPatients.filter(p => p.isActive).length} • 
-                Inativos: {filteredPatients.filter(p => !p.isActive).length}
-              </span>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex flex-wrap gap-4">
+                <span>
+                  <strong>{filteredPatients.length}</strong> de <strong>{patients.length}</strong> pacientes
+                </span>
+                <span>•</span>
+                <span>
+                  <strong className="text-green-600">{filteredPatients.filter(p => p.isActive).length}</strong> ativos
+                </span>
+                <span>•</span>
+                <span>
+                  <strong className="text-gray-600">{filteredPatients.filter(p => !p.isActive).length}</strong> inativos
+                </span>
+              </div>
+              
+              {(searchTerm || statusFilter !== 'all' || dateFilter !== 'all') && (
+                <span className="text-blue-600 font-medium">
+                  Filtros ativos
+                </span>
+              )}
             </div>
           </CardContent>
         </Card>

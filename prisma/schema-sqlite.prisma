@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  crf       String?  @unique
+  phone     String?
+  specialty String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patients     Patient[]
+  appointments Appointment[]
+  evolutions   Evolution[]
+
+  @@map("users")
+}
+
+model Patient {
+  id          String    @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  cpf         String?   @unique
+  birthDate   DateTime?
+  address     String?
+  diagnosis   String?
+  observations String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  evolutions   Evolution[]
+
+  @@map("patients")
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  date        DateTime
+  duration    Int               @default(60)
+  status      AppointmentStatus @default(SCHEDULED)
+  notes       String?
+  price       Float?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  evolution Evolution?
+
+  @@map("appointments")
+}
+
+model Evolution {
+  id           String   @id @default(cuid())
+  symptoms     String?
+  treatment    String?
+  observations String?
+  exercises    String?
+  nextSteps    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId     String
+  patient       Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("evolutions")
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}

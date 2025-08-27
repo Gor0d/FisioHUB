@@ -51,7 +51,21 @@
       "Bash(true)",
       "Bash(node:*)",
       "Bash(git rm:*)",
-      "Bash(API_PORT=3003 npm start)"
+      "Bash(API_PORT=3003 npm start)",
+      "Bash(railway login:*)",
+      "Bash(railway add:*)",
+      "Bash(railway link:*)",
+      "Bash(railway status:*)",
+      "Bash(railway variables set:*)",
+      "Bash(railway variables:*)",
+      "Bash(railway up:*)",
+      "Bash(railway domain:*)",
+      "Bash(railway run npx prisma:*)",
+      "Bash(railway logs:*)",
+      "Bash(copy backend.env.example backend.env)",
+      "Bash(npx vercel:*)",
+      "Bash(npm --version)",
+      "WebFetch(domain:lucky-dedication-production.up.railway.app)"
     ],
     "deny": [],
     "ask": []

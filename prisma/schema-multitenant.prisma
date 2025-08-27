@@ -1,0 +1,283 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"  // Mudança para PostgreSQL
+  url      = env("DATABASE_URL")
+}
+
+// Nova tabela de Hospitais (Tenants)
+model Hospital {
+  id                String    @id @default(cuid())
+  subdomain         String    @unique // hospital1, hospital2, etc
+  name              String
+  logoUrl           String?
+  primaryColor      String?   @default("#3B82F6") // Azul padrão
+  maxUsers          Int       @default(10)
+  subscriptionPlan  String    @default("basic") // basic, professional, enterprise
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relacionamentos
+  users         User[]
+  patients      Patient[]
+  indicators    Indicator[]
+  barthelScales BarthelScale[]
+  mrcScales     MrcScale[]
+  appointments  Appointment[]
+  evolutions    Evolution[]
+
+  @@map("hospitals")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   
+  name      String
+  password  String
+  crf       String?
+  phone     String?
+  specialty String?
+  role      String   @default("PHYSIOTHERAPIST") // ADMIN, COORDINATOR, PHYSIOTHERAPIST, TECHNICIAN, VIEWER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Multi-tenant
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  // Relacionamentos
+  patients      Patient[]
+  appointments  Appointment[]
+  evolutions    Evolution[]
+  indicators    Indicator[]
+  barthelScales BarthelScale[]
+  mrcScales     MrcScale[]
+
+  // Email único por hospital
+  @@unique([email, hospitalId])
+  @@map("users")
+}
+
+model Patient {
+  id               String    @id @default(cuid())
+  name             String
+  email            String?
+  phone            String?
+  attendanceNumber String?   // Número de atendimento único por hospital
+  bedNumber        String?   // Leito
+  birthDate        DateTime?
+  address          String?
+  cid              String?   // Código CID
+  diagnosis        String?
+  observations     String?
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Multi-tenant
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  appointments Appointment[]
+  evolutions   Evolution[]
+  indicators   Indicator[]
+  barthelScales BarthelScale[]
+  mrcScales    MrcScale[]
+
+  // Número de atendimento único por hospital
+  @@unique([attendanceNumber, hospitalId])
+  @@map("patients")
+}
+
+model Appointment {
+  id        String            @id @default(cuid())
+  date      DateTime
+  duration  Int               @default(60) // minutos
+  status    AppointmentStatus @default(SCHEDULED)
+  notes     String?
+  price     Float?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  // Multi-tenant
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  userId    String
+  patientId String
+  user      User      @relation(fields: [userId], references: [id])
+  patient   Patient   @relation(fields: [patientId], references: [id])
+  evolution Evolution?
+
+  @@map("appointments")
+}
+
+model Evolution {
+  id           String   @id @default(cuid())
+  symptoms     String?
+  treatment    String?
+  observations String?
+  exercises    String?
+  nextSteps    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Multi-tenant
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  userId        String
+  patientId     String
+  appointmentId String      @unique
+  user          User        @relation(fields: [userId], references: [id])
+  patient       Patient     @relation(fields: [patientId], references: [id])
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("evolutions")
+}
+
+model Indicator {
+  id                       String   @id @default(cuid())
+  date                     DateTime @default(now())
+  collaborator             String?
+  sector                   String?
+  shift                    String?
+  
+  // Indicadores de Internação
+  patientsHospitalized     Int?
+  patientsPrescribed       Int?
+  patientsCaptured         Int?
+  discharges               Int?
+  intubations              Int?
+  
+  // Indicadores Respiratórios
+  respiratoryTherapyCount  Int?
+  extubationEffectivenessRate Float?
+  deaths                   Int?
+  pcr                      Int?
+  respiratoryTherapyRate   Float?
+  
+  // Indicadores Motores
+  motorTherapyRate         Float?
+  artificialAirwayPatients Int?
+  aspirationRate           Float?
+  
+  // Indicadores de Mobilização
+  sedestationExpected      Int?
+  sedestationRate          Float?
+  orthostatismExpected     Int?
+  orthostatismRate         Float?
+  ambulationRate           Float?
+  
+  // Outros Indicadores
+  pronation                Int?
+  oxygenTherapyPatients    Int?
+  multidisciplinaryVisits  Int?
+  nonInvasiveVentilationRate Float?
+  invasiveMechanicalVentRate Float?
+  tracheostomy             Int?
+  nonAmbulatingPatients    Int?
+  fallsAndIncidents        Int?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Multi-tenant
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  userId    String
+  patientId String?
+  user      User    @relation(fields: [userId], references: [id])
+  patient   Patient? @relation(fields: [patientId], references: [id])
+
+  @@map("indicators")
+}
+
+model BarthelScale {
+  id             String   @id @default(cuid())
+  
+  // 10 atividades da Escala de Barthel
+  feeding        Int      // 0, 5, 10
+  bathing        Int      // 0, 5
+  grooming       Int      // 0, 5
+  dressing       Int      // 0, 5, 10
+  bowelControl   Int      // 0, 5, 10
+  bladderControl Int      // 0, 5, 10
+  toileting      Int      // 0, 5, 10
+  transfer       Int      // 0, 5, 10, 15
+  mobility       Int      // 0, 5, 10, 15
+  stairs         Int      // 0, 5, 10
+  
+  totalScore     Int      // 0-100
+  classification String   // Dependência total, severa, moderada, leve, independente
+  type           String   // ENTRADA ou SAIDA
+  
+  evaluationDate DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Multi-tenant
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  userId      String
+  patientId   String
+  evolutionId String?
+  user        User       @relation(fields: [userId], references: [id])
+  patient     Patient    @relation(fields: [patientId], references: [id])
+  evolution   Evolution? @relation(fields: [evolutionId], references: [id])
+
+  @@map("barthel_scales")
+}
+
+model MrcScale {
+  id                String   @id @default(cuid())
+  
+  // Grupos musculares - Medical Research Council (0-5 cada)
+  shoulderAbduction Int      // Abdução do ombro
+  elbowFlexion      Int      // Flexão do cotovelo
+  wristExtension    Int      // Extensão do punho
+  hipFlexion        Int      // Flexão do quadril
+  kneeExtension     Int      // Extensão do joelho
+  ankleFlexion      Int      // Flexão do tornozelo
+  neckFlexion       Int      // Flexão do pescoço
+  trunkFlexion      Int      // Flexão do tronco
+  shoulderAdduction Int      // Adução do ombro
+  elbowExtension    Int      // Extensão do cotovelo
+  
+  totalScore     Int    // Soma total
+  averageScore   Float  // Média
+  classification String // Classificação da força
+  type           String // ENTRADA ou SAIDA
+  
+  evaluationDate DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Multi-tenant
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  userId      String
+  patientId   String
+  evolutionId String?
+  user        User       @relation(fields: [userId], references: [id])
+  patient     Patient    @relation(fields: [patientId], references: [id])
+  evolution   Evolution? @relation(fields: [evolutionId], references: [id])
+
+  @@map("mrc_scales")
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
