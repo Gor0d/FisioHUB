@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { tenantApi } from '@/lib/api';
+import { getMockTenantData } from '@/lib/tenant-security';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +50,26 @@ export default function TenantPage() {
 
   useEffect(() => {
     if (slug) {
-      // Always create tenant info from slug - no API dependency
+      // Check if this is Hospital Galileu and use mock data
+      if (slug === '0li0k7HNQslV') {
+        console.log('🏥 Hospital Galileu page detected! Using mock data');
+        const mockData = getMockTenantData('0li0k7HNQslV');
+        if (mockData) {
+          setTenantInfo({
+            id: mockData.id,
+            name: mockData.name,
+            slug: mockData.slug,
+            status: mockData.status,
+            plan: mockData.plan,
+            createdAt: new Date().toISOString(),
+            trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Fallback for other tenants
       const fallbackName = slug.split('-').map(word => 
         word.charAt(0).toUpperCase() + word.slice(1)
       ).join(' ');
