@@ -27,9 +27,12 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import type { Patient } from '@/types';
 import { PatientActions } from '@/components/ui/patient-actions';
+import { useTenant, useTenantUrls } from '@/hooks/use-tenant';
 
 export default function PatientsPage() {
-  const params = useParams();
+  const { tenant, loading: tenantLoading, error: tenantError } = useTenant();
+  const tenantUrls = useTenantUrls();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
@@ -38,7 +41,32 @@ export default function PatientsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const slug = params?.slug as string;
+  // Show tenant loading or error state
+  if (tenantLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Carregando informações da organização...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (tenantError || !tenant) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <FileText className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Organização não encontrada</h2>
+          <p className="text-gray-600 mb-4">{tenantError || 'Verifique a URL e tente novamente'}</p>
+          <Link href="/">
+            <Button>Voltar ao Início</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch patients from API
   const fetchPatients = async () => {
@@ -130,12 +158,12 @@ export default function PatientsPage() {
               <div className="border-l pl-4">
                 <h1 className="font-semibold text-lg">Pacientes</h1>
                 <p className="text-sm text-muted-foreground">
-                  {slug}
+                  {tenant.name || tenant.publicId}
                 </p>
               </div>
             </div>
             
-            <Link href={`/t/${slug}/dashboard`}>
+            <Link href={tenantUrls?.dashboard || '#'}>
               <Button variant="outline" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar ao Dashboard
@@ -151,11 +179,11 @@ export default function PatientsPage() {
           <div>
             <h2 className="text-2xl font-bold text-foreground">Pacientes</h2>
             <p className="text-muted-foreground">
-              Gerencie todos os pacientes do {slug}
+              Gerencie todos os pacientes do {tenant.name || tenant.publicId}
             </p>
           </div>
           
-          <Link href={`/t/${slug}/patients/new`}>
+          <Link href={tenantUrls?.newPatient || '#'}>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Novo Paciente
@@ -322,7 +350,7 @@ export default function PatientsPage() {
               </p>
               
               {!searchTerm && (
-                <Link href={`/t/${slug}/patients/new`}>
+                <Link href={tenantUrls?.newPatient || '#'}>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Cadastrar Primeiro Paciente
@@ -387,7 +415,7 @@ export default function PatientsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Link href={`/t/${slug}/patients/${patient.id}`}>
+                      <Link href={tenantUrls?.patient(patient.id) || '#'}>
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4 mr-2" />
                           Ver Detalhes
