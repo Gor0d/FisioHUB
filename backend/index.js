@@ -35,8 +35,8 @@ async function ensureDefaultUser() {
   }
 }
 
-// Initialize default user on startup
-ensureDefaultUser();
+// Initialize default user on startup - COMMENTED OUT FOR DEBUG
+// ensureDefaultUser();
 
 // Basic middleware
 app.use(cors());
