@@ -1084,6 +1084,16 @@ app.get('/api/indicators/custom-dashboard/:tenantId', (req, res) => {
   });
 });
 
+// Test endpoint to debug the fetch issue
+app.get('/api/test/dashboard/:tenantId', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Dashboard test endpoint working',
+    tenantId: req.params.tenantId,
+    period: req.query.period || '30d'
+  });
+});
+
 // DISABLED: Old complex dashboard endpoint 
 /*
       configData = {
