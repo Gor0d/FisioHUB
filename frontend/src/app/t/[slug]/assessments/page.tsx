@@ -5,7 +5,6 @@ import { useTenant } from '@/hooks/use-tenant';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Scale,
   Activity,
@@ -41,7 +40,7 @@ interface Patient {
 }
 
 export default function AssessmentsPage() {
-  const { tenant, isLoading: tenantLoading } = useTenant();
+  const { tenant, loading: tenantLoading } = useTenant();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AssessmentStats | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -51,14 +50,14 @@ export default function AssessmentsPage() {
   const [showHistory, setShowHistory] = useState(false);
 
   const loadData = async () => {
-    if (!tenant?.id) return;
+    if (!tenant?.publicId) return;
 
     try {
       setLoading(true);
 
       // Load stats
       const statsResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/assessments/stats/${tenant.id}?period=${selectedPeriod}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/assessments/stats/${tenant.publicId}?period=${selectedPeriod}`
       );
       
       if (statsResponse.ok) {
@@ -93,7 +92,7 @@ export default function AssessmentsPage() {
 
   useEffect(() => {
     loadData();
-  }, [tenant?.id, selectedPeriod]);
+  }, [tenant?.publicId, selectedPeriod]);
 
   const handlePatientSelect = (patientId: string) => {
     setSelectedPatient(patientId);
@@ -144,14 +143,36 @@ export default function AssessmentsPage() {
       </div>
 
       {/* Period Selector */}
-      <Tabs value={selectedPeriod} onValueChange={setSelectedPeriod} className="mb-6">
-        <TabsList>
-          <TabsTrigger value="7d">7 dias</TabsTrigger>
-          <TabsTrigger value="30d">30 dias</TabsTrigger>
-          <TabsTrigger value="90d">90 dias</TabsTrigger>
-          <TabsTrigger value="1y">1 ano</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex gap-2 mb-6">
+        <Button 
+          variant={selectedPeriod === '7d' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setSelectedPeriod('7d')}
+        >
+          7 dias
+        </Button>
+        <Button 
+          variant={selectedPeriod === '30d' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setSelectedPeriod('30d')}
+        >
+          30 dias
+        </Button>
+        <Button 
+          variant={selectedPeriod === '90d' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setSelectedPeriod('90d')}
+        >
+          90 dias
+        </Button>
+        <Button 
+          variant={selectedPeriod === '1y' ? 'default' : 'outline'} 
+          size="sm"
+          onClick={() => setSelectedPeriod('1y')}
+        >
+          1 ano
+        </Button>
+      </div>
 
       {/* Statistics Cards */}
       {stats && (
@@ -426,7 +447,7 @@ export default function AssessmentsPage() {
           open={showHistory}
           onOpenChange={setShowHistory}
           patientId={selectedPatient}
-          tenantId={tenant.id}
+          tenantId={tenant.publicId}
         />
       )}
     </div>

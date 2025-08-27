@@ -120,7 +120,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
       }
 
       // Create tenant context
-      const tenantContext = createTenantContext(publicId, tenantData);
+      const tenantContext = createTenantContext(publicId!, tenantData);
       setTenant(tenantContext);
 
     } catch (error: any) {
@@ -129,10 +129,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
       // ALWAYS try to use mock data for Hospital Galileu first
       if (publicId === '0li0k7HNQslV') {
         console.log('Hospital Galileu detected, using mock data as fallback');
-        const mockData = getMockTenantData(publicId!);
+        const mockData = getMockTenantData(publicId);
         if (mockData) {
           console.log('Using mock data for Hospital Galileu:', mockData);
-          const tenantContext = createTenantContext(publicId!, mockData);
+          const tenantContext = createTenantContext(publicId, mockData);
           setTenant(tenantContext);
           setLoading(false);
           return;
