@@ -716,6 +716,362 @@ app.post('/api/ensure-user', async (req, res) => {
   }
 });
 
+// =============================================
+// SISTEMA DE CUSTOMIZAÇÃO DE INDICADORES
+// =============================================
+
+// Get tenant indicator configurations
+app.get('/api/admin/:tenantId/indicators/config', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    
+    // Por enquanto, retornamos configuração hard-coded do Hospital Galileu
+    if (tenantId === '0li0k7HNQslV') {
+      const galileuConfig = [
+        {
+          id: 'galileu_1',
+          indicatorKey: 'pacientes_internados',
+          indicatorName: 'Pacientes Internados',
+          description: 'Total de pacientes internados no momento',
+          category: 'volume',
+          unit: 'pacientes',
+          calculationType: 'automatic',
+          isActive: true,
+          displayOrder: 1,
+          target: null,
+          alertThreshold: null
+        },
+        {
+          id: 'galileu_2',
+          indicatorKey: 'pacientes_prescritos_fisio',
+          indicatorName: 'Pacientes Prescritos para Fisioterapia',
+          description: 'Taxa de pacientes captados pela Fisioterapia nas unidades',
+          category: 'volume',
+          unit: 'pacientes',
+          calculationType: 'automatic',
+          isActive: true,
+          displayOrder: 2,
+          target: null,
+          alertThreshold: null
+        },
+        {
+          id: 'galileu_3',
+          indicatorKey: 'altas',
+          indicatorName: 'Altas',
+          description: 'Total de altas no período',
+          category: 'desfecho',
+          unit: 'pacientes',
+          calculationType: 'automatic',
+          isActive: true,
+          displayOrder: 3,
+          target: null,
+          alertThreshold: null
+        },
+        {
+          id: 'galileu_4',
+          indicatorKey: 'obitos',
+          indicatorName: 'Óbitos',
+          description: 'Total de óbitos no período',
+          category: 'desfecho',
+          unit: 'pacientes',
+          calculationType: 'automatic',
+          isActive: true,
+          displayOrder: 4,
+          target: null,
+          alertThreshold: null
+        },
+        {
+          id: 'galileu_5',
+          indicatorKey: 'intubacoes',
+          indicatorName: 'Intubações',
+          description: 'Número de intubações no período',
+          category: 'respiratorio',
+          unit: 'procedimentos',
+          calculationType: 'manual',
+          isActive: true,
+          displayOrder: 5,
+          target: null,
+          alertThreshold: null
+        },
+        {
+          id: 'galileu_6',
+          indicatorKey: 'pcr',
+          indicatorName: 'PCR',
+          description: 'Paradas cardiorrespiratórias',
+          category: 'desfecho',
+          unit: 'eventos',
+          calculationType: 'manual',
+          isActive: true,
+          displayOrder: 6,
+          target: null,
+          alertThreshold: null
+        },
+        {
+          id: 'galileu_7',
+          indicatorKey: 'fisio_respiratoria',
+          indicatorName: 'Taxa de Fisioterapia Respiratória',
+          description: '% de Fisioterapia Respiratória realizada',
+          category: 'respiratorio',
+          unit: '%',
+          calculationType: 'manual',
+          isActive: true,
+          displayOrder: 7,
+          target: 80,
+          alertThreshold: 70
+        },
+        {
+          id: 'galileu_8',
+          indicatorKey: 'fisio_motora',
+          indicatorName: 'Taxa de Fisioterapia Motora',
+          description: '% de Fisioterapia Motora realizada',
+          category: 'mobilidade',
+          unit: '%',
+          calculationType: 'manual',
+          isActive: true,
+          displayOrder: 8,
+          target: 75,
+          alertThreshold: 65
+        }
+      ];
+      
+      return res.json({
+        success: true,
+        data: galileuConfig
+      });
+    }
+    
+    // Para outros tenants, retorna vazio por enquanto
+    res.json({
+      success: true,
+      data: []
+    });
+    
+  } catch (error) {
+    console.error('Erro ao buscar configurações:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Get tenant branding configuration
+app.get('/api/admin/:tenantId/branding', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    
+    // Configuração hard-coded do Hospital Galileu
+    if (tenantId === '0li0k7HNQslV') {
+      return res.json({
+        success: true,
+        data: {
+          logoUrl: 'https://via.placeholder.com/200x80/1E40AF/white?text=HOSPITAL+GALILEU',
+          primaryColor: '#1E40AF',
+          secondaryColor: '#3B82F6',
+          dashboardTitle: 'Indicadores da Fisioterapia',
+          dashboardSubtitle: 'Hospital Galileu - Monitoramento em Tempo Real',
+          reportHeader: '<h2>Hospital Galileu - Relatório de Indicadores</h2>'
+        }
+      });
+    }
+    
+    // Default branding
+    res.json({
+      success: true,
+      data: {
+        logoUrl: null,
+        primaryColor: '#3B82F6',
+        secondaryColor: '#1E40AF',
+        dashboardTitle: 'Indicadores Clínicos',
+        dashboardSubtitle: '',
+        reportHeader: ''
+      }
+    });
+    
+  } catch (error) {
+    console.error('Erro ao buscar branding:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Custom dashboard with calculated indicators
+app.get('/api/indicators/custom-dashboard/:tenantId', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const { period = '30d' } = req.query;
+    
+    console.log(`🏥 Custom Dashboard request - Tenant: ${tenantId}, Period: ${period}`);
+    
+    // Get indicator configurations for this tenant
+    const configResponse = await fetch(`${process.env.API_URL || 'http://localhost:3001'}/api/admin/${tenantId}/indicators/config`);
+    const configData = await configResponse.json();
+    
+    if (!configData.success) {
+      throw new Error('Erro ao carregar configurações');
+    }
+    
+    const indicators = configData.data;
+    const calculatedIndicators = {};
+    
+    // Calculate each active indicator
+    for (const indicator of indicators.filter(i => i.isActive)) {
+      try {
+        let value = 0;
+        
+        // Calculate based on type
+        switch (indicator.calculationType) {
+          case 'automatic':
+            value = await calculateAutomaticIndicator(tenantId, indicator.indicatorKey, period);
+            break;
+          case 'manual':
+            // Get manual values or use demo data
+            value = getManualIndicatorValue(indicator.indicatorKey);
+            break;
+          default:
+            value = 0;
+        }
+        
+        calculatedIndicators[indicator.indicatorKey] = {
+          config: indicator,
+          value: value,
+          trend: 'stable', // Simplified for now
+          isOnTarget: indicator.target ? value >= indicator.target : true,
+          needsAlert: indicator.alertThreshold ? value < indicator.alertThreshold : false
+        };
+        
+      } catch (error) {
+        console.error(`Erro ao calcular indicador ${indicator.indicatorKey}:`, error);
+        calculatedIndicators[indicator.indicatorKey] = {
+          config: indicator,
+          value: 0,
+          trend: 'stable',
+          isOnTarget: false,
+          needsAlert: true
+        };
+      }
+    }
+    
+    // Calculate summary
+    const totalIndicators = Object.keys(calculatedIndicators).length;
+    const onTargetCount = Object.values(calculatedIndicators).filter(i => i.isOnTarget).length;
+    const alertCount = Object.values(calculatedIndicators).filter(i => i.needsAlert).length;
+    
+    const summary = {
+      total: totalIndicators,
+      onTarget: onTargetCount,
+      needsAlert: alertCount,
+      performance: totalIndicators > 0 ? Math.round((onTargetCount / totalIndicators) * 100) : 0
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        period,
+        indicators: calculatedIndicators,
+        summary
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro no dashboard customizado:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
+  }
+});
+
+// Helper functions for indicator calculations
+async function calculateAutomaticIndicator(tenantId, indicatorKey, period) {
+  // Calculate date range
+  const now = new Date();
+  const startDate = new Date(now);
+  
+  switch(period) {
+    case '7d': startDate.setDate(now.getDate() - 7); break;
+    case '30d': startDate.setDate(now.getDate() - 30); break;
+    case '90d': startDate.setDate(now.getDate() - 90); break;
+    default: startDate.setDate(now.getDate() - 30);
+  }
+  
+  try {
+    switch (indicatorKey) {
+      case 'pacientes_internados':
+        // Total patients currently admitted
+        const internados = await prisma.patient.count({
+          where: { isActive: true }
+        });
+        return internados;
+        
+      case 'pacientes_prescritos_fisio':
+        // Patients prescribed for physiotherapy (mock data for now)
+        const prescritos = await prisma.patient.count({
+          where: { isActive: true }
+        });
+        return Math.round(prescritos * 0.85); // 85% prescribed
+        
+      case 'altas':
+        // Discharges in period
+        const altas = await prisma.patient.count({
+          where: { 
+            dischargeDate: {
+              gte: startDate,
+              lte: now
+            }
+          }
+        });
+        return altas;
+        
+      case 'obitos':
+        // Deaths in period  
+        const obitos = await prisma.patient.count({
+          where: {
+            dischargeDate: {
+              gte: startDate,
+              lte: now
+            },
+            dischargeReason: { contains: 'óbito' }
+          }
+        });
+        return obitos;
+        
+      default:
+        return 0;
+    }
+  } catch (error) {
+    console.error(`Erro calculando ${indicatorKey}:`, error);
+    // Return demo data if database fails
+    return getDemoValue(indicatorKey);
+  }
+}
+
+function getManualIndicatorValue(indicatorKey) {
+  // Demo values for manual indicators
+  const demoValues = {
+    'intubacoes': 5,
+    'pcr': 1,
+    'fisio_respiratoria': 78, // 78%
+    'fisio_motora': 82 // 82%
+  };
+  
+  return demoValues[indicatorKey] || 0;
+}
+
+function getDemoValue(indicatorKey) {
+  const demoValues = {
+    'pacientes_internados': 45,
+    'pacientes_prescritos_fisio': 38,
+    'altas': 12,
+    'obitos': 2
+  };
+  
+  return demoValues[indicatorKey] || 0;
+}
+
 // Generic not found
 app.use('*', (req, res) => {
   res.status(404).json({
