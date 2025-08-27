@@ -85,7 +85,7 @@ export default function IndicatorsPage() {
   const [showIndicatorForm, setShowIndicatorForm] = useState(false);
 
   const fetchDashboard = async () => {
-    if (!tenant?.id) return;
+    if (!tenant?.publicId) return;
 
     try {
       setLoading(true);
@@ -118,7 +118,7 @@ export default function IndicatorsPage() {
 
   useEffect(() => {
     fetchDashboard();
-  }, [tenant?.id, selectedPeriod, selectedCategory]);
+  }, [tenant?.publicId, selectedPeriod, selectedCategory]);
 
   const formatValue = (value: number, format: string, unit: string) => {
     switch (format) {

@@ -124,7 +124,7 @@ export default function IndicatorForm({ open, onOpenChange, onSuccess }: Indicat
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm() || !tenant?.id) return;
+    if (!validateForm() || !tenant?.publicId) return;
 
     setLoading(true);
 
