@@ -65,7 +65,11 @@
       "Bash(copy backend.env.example backend.env)",
       "Bash(npx vercel:*)",
       "Bash(npm --version)",
-      "WebFetch(domain:lucky-dedication-production.up.railway.app)"
+      "WebFetch(domain:lucky-dedication-production.up.railway.app)",
+      "Bash(for i in {1..5})",
+      "Bash(do echo:*)",
+      "Bash(break)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

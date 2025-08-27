@@ -101,10 +101,36 @@ export interface TenantContext {
   urls: ReturnType<typeof generateTenantUrls>;
 }
 
+// Mock data for Hospital Galileu when API is not available
+export function getMockTenantData(publicId: string): any | null {
+  const mockData: Record<string, any> = {
+    '0li0k7HNQslV': {
+      id: 'tenant_galileu_2025',
+      name: 'Hospital Galileu',
+      publicId: '0li0k7HNQslV',
+      slug: 'hospital-galileu',
+      status: 'active',
+      plan: 'professional',
+      isActive: true,
+      metadata: {
+        specialty: 'fisioterapia_hospitalar',
+        features: ['indicators', 'mrc_barthel', 'evolutions']
+      }
+    }
+  };
+
+  return mockData[publicId] || null;
+}
+
 /**
  * Create tenant context from public ID
  */
 export function createTenantContext(publicId: string, data?: any): TenantContext {
+  // If no data provided, try to use mock data for known tenants
+  if (!data && publicId === '0li0k7HNQslV') {
+    data = getMockTenantData(publicId);
+  }
+
   return {
     publicId,
     slug: data?.slug,
