@@ -218,6 +218,8 @@ model Patient {
   appointments Appointment[]
   evolutions   Evolution[]
   bedTransfers BedTransfer[] // Histórico de transferências
+  assessments  Assessment[]  // Avaliações MRC e Barthel
+  indicators   Indicator[]   // Indicadores clínicos
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -290,6 +292,57 @@ model Evolution {
   updatedAt    DateTime @updatedAt
   
   @@map("evolutions")
+}
+
+// ================================
+// ASSESSMENTS - ESCALAS MRC E BARTHEL
+// ================================
+
+model Assessment {
+  id             String   @id @default(cuid())
+  tenantId       String
+  patientId      String
+  scaleType      String   // 'mrc' ou 'barthel'
+  scores         String   // JSON com pontuações individuais
+  totalScore     Int      // Soma total dos pontos
+  maxScore       Int      // Pontuação máxima possível
+  percentage     Int      // Percentual alcançado
+  observations   String?  // Observações do avaliador
+  assessedBy     String   // ID do usuário que fez a avaliação
+  assessmentDate DateTime @default(now())
+  
+  // Relacionamentos
+  patient        Patient  @relation(fields: [patientId], references: [id])
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@map("assessments")
+}
+
+// ================================
+// INDICADORES CLÍNICOS
+// ================================
+
+model Indicator {
+  id              String   @id @default(cuid())
+  tenantId        String
+  patientId       String?  // Pode ser nulo para indicadores gerais
+  type            String   // Tipo do indicador
+  value           Float    // Valor medido
+  targetValue     Float    // Meta/objetivo
+  unit            String   // Unidade (%, dias, pontos, etc)
+  measurementDate DateTime @default(now())
+  metadata        String?  // JSON com dados adicionais
+  createdBy       String   // Quem registrou
+  
+  // Relacionamentos
+  patient         Patient? @relation(fields: [patientId], references: [id])
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("indicators")
 }
 
 enum AppointmentStatus {

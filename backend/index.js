@@ -21,6 +21,10 @@ const SlugSecurity = require('./utils/slug-security');
 const rateLimiters = require('./middleware/rate-limiting');
 const { securityHeaders, secureCorsOptions } = require('./middleware/security-headers');
 const InputValidator = require('./middleware/input-validation');
+const emailVerificationService = require('./services/email-verification');
+const { IndicatorsController } = require('./controllers/indicators');
+const { AssessmentsController } = require('./controllers/assessments');
+const { EvolutionsController } = require('./controllers/evolutions');
 
 const app = express();
 const port = process.env.API_PORT || process.env.PORT || 3001;
@@ -81,6 +85,10 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/health',
       register: 'POST /api/tenants/register',
+      emailVerify: 'POST /api/email/verify',
+      emailResend: 'POST /api/email/resend',
+      indicators: 'GET/POST /api/indicators',
+      dashboard: 'GET /api/dashboard/:tenantId',
       tenantInfo: 'GET /api/tenants/:slug/info',
       secureAccess: 'GET /api/secure/:publicId/info',
       dbTest: '/api/db-test',
@@ -359,13 +367,13 @@ app.post('/api/migrate', async (req, res) => {
   }
 });
 
-// Registration with real database
+// Step 1: Registration - Send email verification
 app.post('/api/tenants/register', 
   rateLimiters.register,
   InputValidator.validateRegistration,
   async (req, res) => {
   try {
-    console.log('Registration via index.js with database:', req.body);
+    console.log('🔄 Iniciando registro com verificação de email:', req.body);
     const { name, slug, email, password } = req.body;
     
     // Basic validation
@@ -376,16 +384,14 @@ app.post('/api/tenants/register',
       });
     }
 
-    // Try database first, fallback to memory
+    // Step 1: Check if slug/email already exists
     try {
-      console.log('🔍 Attempting database operations...');
+      console.log('🔍 Verificando disponibilidade...');
       
-      // Check if slug is already taken in database
-      console.log('🔍 Checking existing tenant for slug:', slug);
+      // Check if slug is already taken
       const existingTenant = await prisma.tenant.findFirst({
         where: { slug }
       });
-      console.log('🔍 Existing tenant check result:', existingTenant ? 'FOUND' : 'NOT_FOUND');
       
       if (existingTenant) {
         return res.status(409).json({
@@ -394,109 +400,351 @@ app.post('/api/tenants/register',
           code: 'DUPLICATE_SLUG'
         });
       }
-      
-      // Create tenant in database
-      console.log('🔍 Creating tenant in database...');
-      const tenantId = `tenant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Generate secure public ID for URL
-      const publicId = SlugSecurity.generatePublicId(slug);
-      console.log(`🔐 Generated public ID: ${publicId} for slug: ${slug}`);
-      
-      const tenant = await prisma.tenant.create({
-        data: {
-          id: tenantId,
+
+      // Check if email is already registered
+      const existingEmail = await prisma.globalUser.findFirst({
+        where: { email }
+      });
+
+      if (existingEmail) {
+        return res.status(409).json({
+          success: false,
+          message: 'Este email já possui uma conta',
+          code: 'DUPLICATE_EMAIL'
+        });
+      }
+
+      // Step 2: Send verification email
+      console.log('📧 Enviando código de verificação...');
+      const verificationResult = await emailVerificationService.sendVerificationCode(email, name);
+
+      if (verificationResult.success) {
+        // Store registration data temporarily (for completion after verification)
+        const registrationId = `reg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // In production, store this in Redis or database
+        global.pendingRegistrations = global.pendingRegistrations || new Map();
+        global.pendingRegistrations.set(registrationId, {
           name,
           slug,
-          publicId,
           email,
-          status: 'trial',
-          plan: 'professional',
-          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        }
-      });
-      console.log('✅ Tenant created:', tenant.id);
-      
-      // Hash password and create admin user
-      console.log('🔍 Creating admin user...');
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const adminUser = await prisma.globalUser.create({
-        data: {
-          id: userId,
-          email,
-          name: `Admin ${name}`,
-          password: hashedPassword,
-          role: 'admin',
-          tenantId: tenant.id
-        }
-      });
-      console.log('✅ Admin user created:', adminUser.id);
-      
-      console.log(`✅ SUCCESS: Tenant criado no DB: ${tenant.name} (${tenant.slug})`);
-      console.log(`✅ SUCCESS: Admin criado no DB: ${adminUser.email}`);
-      
-      res.json({
-        success: true,
-        message: 'Conta criada com sucesso! (DATABASE)',
-        data: { 
-          tenant: {
-            id: tenant.id,
-            name: tenant.name,
-            slug: tenant.slug,
-            publicId: tenant.publicId,
-            status: tenant.status,
-            plan: tenant.plan,
-            createdAt: tenant.createdAt,
-            trialEndsAt: tenant.trialEndsAt
-          },
-          admin: {
-            email: adminUser.email,
-            name: adminUser.name
+          password, // Will be hashed when account is created
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 30 * 60 * 1000 // 30 minutes
+        });
+
+        return res.json({
+          success: true,
+          message: 'Código de verificação enviado para seu email',
+          data: {
+            registrationId,
+            verificationId: verificationResult.verificationId,
+            expiresAt: verificationResult.expiresAt,
+            email: email.replace(/(.{2}).*(@.*)/, '$1***$2'), // Partially hide email
+            nextStep: 'EMAIL_VERIFICATION'
           }
-        }
-      });
-      
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao enviar email de verificação',
+          code: 'EMAIL_SEND_FAILED'
+        });
+      }
+    
     } catch (dbError) {
-      console.error('🚨 DATABASE ERROR DETAILS:');
-      console.error('Error type:', dbError.constructor.name);
-      console.error('Error code:', dbError.code);
-      console.error('Error message:', dbError.message);
-      console.error('Error stack:', dbError.stack);
-      console.error('DATABASE_URL being used:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 40) + '...' : 'undefined');
-      console.warn('🔄 Using memory fallback due to error above');
-      
-      // Fallback to memory storage
-      registeredTenants[slug] = {
-        id: `temp-${Date.now()}`,
-        name,
-        slug,
-        email,
-        status: 'trial',
-        plan: 'professional',
-        createdAt: new Date().toISOString(),
-        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-      };
-      
-      res.json({
-        success: true,
-        message: 'Conta criada com sucesso! (modo temporário)',
-        data: { 
-          tenant: registeredTenants[slug],
-          admin: {
-            email,
-            name: `Admin ${name}`
-          },
-          note: 'Dados salvos temporariamente - database será reconectado'
-        }
+      console.error('🚨 Erro no banco de dados:', dbError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        code: 'DATABASE_ERROR'
       });
     }
     
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('❌ Erro no registro:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor',
+      code: 'INTERNAL_ERROR'
+    });
   }
 });
+
+// Step 2: Verify email and complete registration
+app.post('/api/email/verify',
+  rateLimiters.auth,
+  async (req, res) => {
+    try {
+      const { verificationId, code, registrationId } = req.body;
+
+      if (!verificationId || !code || !registrationId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados de verificação incompletos'
+        });
+      }
+
+      // Verify the email code
+      const verificationResult = await emailVerificationService.verifyCode(verificationId, code);
+
+      if (!verificationResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: verificationResult.message,
+          remainingAttempts: verificationResult.remainingAttempts
+        });
+      }
+
+      // Get pending registration data
+      global.pendingRegistrations = global.pendingRegistrations || new Map();
+      const registrationData = global.pendingRegistrations.get(registrationId);
+
+      if (!registrationData) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados de registro não encontrados ou expirados'
+        });
+      }
+
+      // Check if registration expired
+      if (Date.now() > registrationData.expiresAt) {
+        global.pendingRegistrations.delete(registrationId);
+        return res.status(400).json({
+          success: false,
+          message: 'Registro expirou. Inicie o processo novamente.'
+        });
+      }
+
+      // Verify email matches
+      if (registrationData.email !== verificationResult.email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email de verificação não confere'
+        });
+      }
+
+      // Email verified! Now create the tenant and user
+      console.log('✅ Email verificado! Criando conta...');
+
+      try {
+        // Create tenant in database
+        const tenantId = `tenant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const publicId = SlugSecurity.generatePublicId(registrationData.slug);
+        
+        const tenant = await prisma.tenant.create({
+          data: {
+            id: tenantId,
+            name: registrationData.name,
+            slug: registrationData.slug,
+            publicId,
+            email: registrationData.email,
+            status: 'trial',
+            plan: 'professional',
+            isActive: true,
+            trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 dias
+          }
+        });
+
+        // Create admin user
+        const hashedPassword = await bcrypt.hash(registrationData.password, 12);
+        const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        const adminUser = await prisma.globalUser.create({
+          data: {
+            id: userId,
+            email: registrationData.email,
+            name: `Admin ${registrationData.name}`,
+            password: hashedPassword,
+            role: 'admin',
+            tenantId: tenant.id,
+            isActive: true
+          }
+        });
+
+        // Clean up temporary data
+        global.pendingRegistrations.delete(registrationId);
+
+        console.log(`🎉 Conta criada com sucesso: ${tenant.name} (${publicId})`);
+
+        // Return success with tenant data
+        res.json({
+          success: true,
+          message: 'Conta criada com sucesso!',
+          data: {
+            tenant: {
+              id: tenant.id,
+              name: tenant.name,
+              publicId: tenant.publicId,
+              email: tenant.email,
+              status: tenant.status,
+              plan: tenant.plan,
+              trialEndsAt: tenant.trialEndsAt,
+              createdAt: tenant.createdAt
+            },
+            admin: {
+              id: adminUser.id,
+              email: adminUser.email,
+              name: adminUser.name,
+              role: adminUser.role
+            },
+            urls: {
+              dashboard: `https://fisiohub.app/t/${publicId}/dashboard`,
+              patients: `https://fisiohub.app/t/${publicId}/patients`,
+              login: `https://fisiohub.app/login?tenant=${publicId}`
+            }
+          }
+        });
+
+      } catch (dbError) {
+        console.error('❌ Erro ao criar conta:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao criar conta no banco de dados'
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ Erro na verificação:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  }
+);
+
+// Resend verification code
+app.post('/api/email/resend',
+  rateLimiters.auth,
+  async (req, res) => {
+    try {
+      const { verificationId } = req.body;
+
+      if (!verificationId) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de verificação é obrigatório'
+        });
+      }
+
+      const result = await emailVerificationService.resendCode(verificationId);
+
+      if (result.success) {
+        res.json({
+          success: true,
+          message: result.message,
+          expiresAt: result.expiresAt
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: result.message
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao reenviar código:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  }
+);
+
+// Indicators endpoints
+app.post('/api/indicators',
+  rateLimiters.api,
+  IndicatorsController.recordIndicator
+);
+
+app.get('/api/dashboard/:tenantId',
+  rateLimiters.api,
+  IndicatorsController.getDashboard
+);
+
+app.get('/api/indicators/trends/:tenantId/:type',
+  rateLimiters.api,
+  IndicatorsController.getIndicatorTrends
+);
+
+app.get('/api/indicators/types',
+  rateLimiters.api,
+  IndicatorsController.getIndicatorTypes
+);
+
+// Assessments endpoints
+app.post('/api/assessments',
+  rateLimiters.api,
+  AssessmentsController.createAssessment
+);
+
+app.get('/api/assessments/patient/:tenantId/:patientId',
+  rateLimiters.api,
+  AssessmentsController.getPatientAssessments
+);
+
+app.get('/api/assessments/trends/:tenantId/:patientId/:scaleType',
+  rateLimiters.api,
+  AssessmentsController.getAssessmentTrends
+);
+
+app.get('/api/assessments/:id',
+  rateLimiters.api,
+  AssessmentsController.getAssessment
+);
+
+app.get('/api/assessments/stats/:tenantId',
+  rateLimiters.api,
+  AssessmentsController.getAssessmentStats
+);
+
+app.get('/api/assessments/scales/config',
+  rateLimiters.api,
+  AssessmentsController.getScaleConfigs
+);
+
+// Evolutions endpoints
+app.post('/api/evolutions',
+  rateLimiters.api,
+  EvolutionsController.createEvolution
+);
+
+app.get('/api/evolutions/patient/:tenantId/:patientId',
+  rateLimiters.api,
+  EvolutionsController.getPatientEvolutions
+);
+
+app.get('/api/evolutions/tenant/:tenantId',
+  rateLimiters.api,
+  EvolutionsController.getTenantEvolutions
+);
+
+app.get('/api/evolutions/stats/:tenantId',
+  rateLimiters.api,
+  EvolutionsController.getEvolutionStats
+);
+
+app.get('/api/evolutions/templates',
+  rateLimiters.api,
+  EvolutionsController.getEvolutionTemplates
+);
+
+app.get('/api/evolutions/:id',
+  rateLimiters.api,
+  EvolutionsController.getEvolution
+);
+
+app.put('/api/evolutions/:id',
+  rateLimiters.api,
+  EvolutionsController.updateEvolution
+);
+
+app.delete('/api/evolutions/:id',
+  rateLimiters.api,
+  EvolutionsController.deleteEvolution
+);
 
 // Secure tenant access by publicId
 app.get('/api/secure/:publicId/info', async (req, res) => {

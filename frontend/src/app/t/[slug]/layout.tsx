@@ -1,15 +1,18 @@
 'use client';
 
 import { TenantProvider } from '@/hooks/use-tenant';
+import TenantLayout from '@/components/tenant/tenant-layout';
 
-export default function TenantLayout({
+export default function TenantPageLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
     <TenantProvider>
-      {children}
+      <TenantLayout>
+        {children}
+      </TenantLayout>
     </TenantProvider>
   );
 }
