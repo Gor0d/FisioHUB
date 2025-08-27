@@ -75,7 +75,7 @@ export default function PatientsPage() {
       const response = await api.get('/api/patients');
       
       if (response.data.success) {
-        setPatients(response.data.data.data || []);
+        setPatients(response.data.data || []);
       } else {
         setError('Erro ao carregar pacientes');
       }
