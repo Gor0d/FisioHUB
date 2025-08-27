@@ -403,34 +403,78 @@ app.get('/api/indicators', async (req, res) => {
   }
 });
 
-// Mock indicators endpoint (will be replaced with real data)
+// Dashboard with indicators data
 app.get('/api/dashboard/:tenantId', async (req, res) => {
   try {
     const { tenantId } = req.params;
-    const { period = '30d' } = req.query;
+    const { period = '30d', category } = req.query;
     
-    // Get indicators from database
+    console.log(`📊 Dashboard request - Tenant: ${tenantId}, Period: ${period}`);
+    
+    // Calculate date range based on period
+    const now = new Date();
+    let startDate = new Date();
+    
+    switch (period) {
+      case '7d':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(now.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(now.getDate() - 30);
+    }
+    
+    // Get indicators from database within period
+    const whereClause = {
+      tenantId: tenantId,
+      measurementDate: {
+        gte: startDate,
+        lte: now
+      }
+    };
+    
     const indicators = await prisma.indicator.findMany({
-      where: {
-        tenantId: tenantId
+      where: whereClause,
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
       },
       orderBy: {
-        createdAt: 'desc'
+        measurementDate: 'desc'
       }
     });
     
-    // Process indicators into dashboard format
-    const dashboardData = {};
-    const summary = {
-      total: 0,
-      onTarget: 0,
-      improving: 0,
-      deteriorating: 0,
-      performance: 0
+    console.log(`📈 Found ${indicators.length} indicators for tenant ${tenantId}`);
+    
+    // Get indicator types configuration
+    const indicatorTypesResponse = {
+      early_mobilization: { name: 'Mobilização Precoce', unit: '%', target: 80, category: 'mobility' },
+      mechanical_ventilation: { name: 'Tempo Ventilação Mecânica', unit: 'dias', target: 5, category: 'respiratory' },
+      functional_independence: { name: 'Independência Funcional', unit: 'pontos', target: 85, category: 'functional' },
+      muscle_strength: { name: 'Força Muscular', unit: 'pontos', target: 48, category: 'strength' },
+      hospital_stay: { name: 'Tempo de Internação', unit: 'dias', target: 12, category: 'efficiency' },
+      readmission_30d: { name: 'Readmissão 30 dias', unit: '%', target: 8, category: 'quality' },
+      patient_satisfaction: { name: 'Satisfação do Paciente', unit: 'pontos', target: 9, category: 'satisfaction' },
+      discharge_destination: { name: 'Alta para Casa', unit: '%', target: 75, category: 'outcomes' }
     };
     
-    // Group indicators by type and calculate metrics
+    // Process indicators into dashboard format
+    const dashboardData = {};
     const indicatorsByType = {};
+    
+    // Group indicators by type
     indicators.forEach(indicator => {
       if (!indicatorsByType[indicator.type]) {
         indicatorsByType[indicator.type] = [];
@@ -438,8 +482,77 @@ app.get('/api/dashboard/:tenantId', async (req, res) => {
       indicatorsByType[indicator.type].push(indicator);
     });
     
+    // Build dashboard data for each type
+    Object.entries(indicatorTypesResponse).forEach(([type, config]) => {
+      const typeIndicators = indicatorsByType[type] || [];
+      
+      if (typeIndicators.length > 0) {
+        const values = typeIndicators.map(ind => ({
+          value: ind.value,
+          date: ind.measurementDate.toISOString(),
+          patientId: ind.patientId
+        }));
+        
+        const latest = typeIndicators[0];
+        const average = typeIndicators.reduce((sum, ind) => sum + ind.value, 0) / typeIndicators.length;
+        
+        // Simple trend calculation
+        let trend = 'stable';
+        if (typeIndicators.length > 1) {
+          const recent = typeIndicators.slice(0, Math.ceil(typeIndicators.length / 2));
+          const older = typeIndicators.slice(Math.ceil(typeIndicators.length / 2));
+          
+          const recentAvg = recent.reduce((sum, ind) => sum + ind.value, 0) / recent.length;
+          const olderAvg = older.reduce((sum, ind) => sum + ind.value, 0) / older.length;
+          
+          if (recentAvg > olderAvg * 1.05) trend = 'up';
+          else if (recentAvg < olderAvg * 0.95) trend = 'down';
+        }
+        
+        dashboardData[type] = {
+          config,
+          values,
+          latest: {
+            value: latest.value,
+            date: latest.measurementDate.toISOString()
+          },
+          average: Math.round(average * 100) / 100,
+          trend
+        };
+      }
+    });
+    
     // Calculate summary
-    summary.total = Object.keys(indicatorsByType).length;
+    const totalTypes = Object.keys(dashboardData).length;
+    const onTarget = Object.values(dashboardData).filter(data => {
+      const latest = data.latest?.value || 0;
+      const target = data.config.target;
+      // Different logic for different indicator types
+      if (data.config.unit === '%' && data.config.category === 'quality') {
+        return latest <= target; // Lower is better for readmission
+      }
+      if (data.config.unit === 'dias' && data.config.category === 'respiratory') {
+        return latest <= target; // Lower is better for ventilation days  
+      }
+      if (data.config.unit === 'dias' && data.config.category === 'efficiency') {
+        return latest <= target; // Lower is better for hospital stay
+      }
+      return latest >= target; // Higher is better for most others
+    }).length;
+    
+    const improving = Object.values(dashboardData).filter(data => data.trend === 'up').length;
+    const deteriorating = Object.values(dashboardData).filter(data => data.trend === 'down').length;
+    const performance = totalTypes > 0 ? Math.round((onTarget / totalTypes) * 100) : 0;
+    
+    const summary = {
+      total: totalTypes,
+      onTarget,
+      improving,
+      deteriorating,
+      performance
+    };
+    
+    console.log(`📊 Dashboard summary:`, summary);
     
     res.json({
       success: true,
@@ -450,10 +563,11 @@ app.get('/api/dashboard/:tenantId', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro no dashboard:', error);
+    console.error('❌ Erro no dashboard:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
