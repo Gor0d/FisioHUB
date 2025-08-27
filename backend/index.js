@@ -4,6 +4,42 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || process.env.API_PORT || 3001;
 
+// In-memory storage for patients (in production this would be a database)
+let patients = [
+  {
+    id: 'patient_1',
+    name: 'João Silva',
+    attendanceNumber: 'ATD001',
+    bedNumber: '101A',
+    isActive: true,
+    admissionDate: '2025-08-25T10:00:00.000Z',
+    email: 'joao@email.com',
+    phone: '(11) 99999-0001',
+    birthDate: '1980-05-15T00:00:00.000Z',
+    address: 'Rua das Flores, 123',
+    diagnosis: 'Recuperação pós-cirúrgica',
+    observations: 'Paciente colaborativo',
+    createdAt: '2025-08-25T10:00:00.000Z',
+    updatedAt: '2025-08-25T10:00:00.000Z'
+  },
+  {
+    id: 'patient_2', 
+    name: 'Maria Santos',
+    attendanceNumber: 'ATD002',
+    bedNumber: '102B',
+    isActive: true,
+    admissionDate: '2025-08-26T14:30:00.000Z',
+    email: 'maria@email.com',
+    phone: '(11) 99999-0002',
+    birthDate: '1975-10-22T00:00:00.000Z',
+    address: 'Av. Principal, 456',
+    diagnosis: 'Fisioterapia motora',
+    observations: 'Necessita acompanhamento',
+    createdAt: '2025-08-26T14:30:00.000Z',
+    updatedAt: '2025-08-26T14:30:00.000Z'
+  }
+];
+
 // Basic middleware
 app.use(cors());
 app.use(express.json());
@@ -65,28 +101,23 @@ app.get('/api/secure/:publicId/info', (req, res) => {
   });
 });
 
-// Mock patients endpoints
+// Get all patients
 app.get('/api/patients', (req, res) => {
+  const { status } = req.query;
+  
+  let filteredPatients = patients;
+  
+  // Filter by status if provided
+  if (status === 'active') {
+    filteredPatients = patients.filter(patient => patient.isActive);
+  } else if (status === 'inactive') {
+    filteredPatients = patients.filter(patient => !patient.isActive);
+  }
+  
   res.json({
     success: true,
-    data: [
-      {
-        id: 'patient_1',
-        name: 'João Silva',
-        attendanceNumber: 'ATD001',
-        bedNumber: '101A',
-        isActive: true,
-        admissionDate: '2025-08-25'
-      },
-      {
-        id: 'patient_2', 
-        name: 'Maria Santos',
-        attendanceNumber: 'ATD002',
-        bedNumber: '102B',
-        isActive: true,
-        admissionDate: '2025-08-26'
-      }
-    ]
+    data: filteredPatients,
+    total: filteredPatients.length
   });
 });
 
@@ -102,28 +133,41 @@ app.post('/api/patients', (req, res) => {
     });
   }
   
-  // Generate a mock patient ID
+  // Check if attendanceNumber already exists
+  const existingPatient = patients.find(p => p.attendanceNumber === attendanceNumber);
+  if (existingPatient) {
+    return res.status(409).json({
+      success: false,
+      message: 'Número de atendimento já existe'
+    });
+  }
+  
+  // Generate a patient ID
   const patientId = `patient_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
   
-  // Mock successful creation
+  // Create new patient
   const newPatient = {
     id: patientId,
     name,
-    email,
+    email: email || null,
     phone,
     attendanceNumber,
-    bedNumber,
+    bedNumber: bedNumber || null,
     admissionDate,
-    birthDate,
-    address,
-    diagnosis,
-    observations,
+    birthDate: birthDate || null,
+    address: address || null,
+    diagnosis: diagnosis || null,
+    observations: observations || null,
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
   
-  console.log('📝 Novo paciente criado:', newPatient);
+  // Add to patients array
+  patients.push(newPatient);
+  
+  console.log('📝 Novo paciente criado e adicionado:', newPatient);
+  console.log('📊 Total de pacientes:', patients.length);
   
   res.status(201).json({
     success: true,
