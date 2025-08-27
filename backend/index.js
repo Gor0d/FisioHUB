@@ -211,22 +211,251 @@ app.post('/api/patients', async (req, res) => {
   }
 });
 
-// Mock indicators endpoint
-app.get('/api/dashboard/:tenantId', (req, res) => {
+// Get indicator types configuration
+app.get('/api/indicators/types', (req, res) => {
+  const indicatorTypes = {
+    early_mobilization: {
+      name: 'Mobilização Precoce',
+      description: 'Percentual de pacientes mobilizados nas primeiras 24h',
+      unit: '%',
+      target: 80,
+      format: 'percentage',
+      category: 'mobility'
+    },
+    mechanical_ventilation: {
+      name: 'Tempo Ventilação Mecânica',
+      description: 'Dias médios em ventilação mecânica',
+      unit: 'dias',
+      target: 5,
+      format: 'decimal',
+      category: 'respiratory'
+    },
+    functional_independence: {
+      name: 'Independência Funcional',
+      description: 'Score médio de independência (Barthel)',
+      unit: 'pontos',
+      target: 85,
+      format: 'integer',
+      category: 'functional'
+    },
+    muscle_strength: {
+      name: 'Força Muscular',
+      description: 'Score médio de força (MRC)',
+      unit: 'pontos',
+      target: 48,
+      format: 'integer',
+      category: 'strength'
+    },
+    hospital_stay: {
+      name: 'Tempo de Internação',
+      description: 'Dias médios de internação hospitalar',
+      unit: 'dias',
+      target: 12,
+      format: 'decimal',
+      category: 'efficiency'
+    },
+    readmission_30d: {
+      name: 'Readmissão 30 dias',
+      description: 'Taxa de readmissão em 30 dias',
+      unit: '%',
+      target: 8,
+      format: 'percentage',
+      category: 'quality'
+    },
+    patient_satisfaction: {
+      name: 'Satisfação do Paciente',
+      description: 'Score médio de satisfação',
+      unit: 'pontos',
+      target: 9,
+      format: 'decimal',
+      category: 'satisfaction'
+    },
+    discharge_destination: {
+      name: 'Alta para Casa',
+      description: 'Percentual de alta para domicílio',
+      unit: '%',
+      target: 75,
+      format: 'percentage',
+      category: 'outcomes'
+    }
+  };
+
   res.json({
     success: true,
     data: {
-      period: '30d',
-      indicators: {},
-      summary: {
-        total: 0,
-        onTarget: 0,
-        improving: 0,
-        deteriorating: 0,
-        performance: 0
+      config: indicatorTypes,
+      categories: {
+        mobility: 'Mobilidade',
+        respiratory: 'Respiratório',
+        functional: 'Funcional',
+        strength: 'Força',
+        efficiency: 'Eficiência',
+        quality: 'Qualidade',
+        satisfaction: 'Satisfação',
+        outcomes: 'Desfechos'
       }
     }
   });
+});
+
+// Create new indicator
+app.post('/api/indicators', async (req, res) => {
+  try {
+    const { tenantId, type, value, targetValue, patientId, measurementDate, metadata } = req.body;
+    
+    // Validate required fields
+    if (!tenantId || !type || value === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Campos obrigatórios: tenantId, type, value'
+      });
+    }
+    
+    // Get indicator type configuration
+    const response = await fetch(`${process.env.API_URL || 'http://localhost:3001'}/api/indicators/types`);
+    const typesData = await response.json();
+    const indicatorConfig = typesData.data.config[type];
+    
+    if (!indicatorConfig) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tipo de indicador inválido'
+      });
+    }
+    
+    // Create indicator in database
+    const newIndicator = await prisma.indicator.create({
+      data: {
+        tenantId,
+        type,
+        value: parseFloat(value),
+        targetValue: targetValue || indicatorConfig.target,
+        unit: indicatorConfig.unit,
+        patientId: patientId || null,
+        measurementDate: measurementDate ? new Date(measurementDate) : new Date(),
+        metadata: metadata ? JSON.stringify(metadata) : null,
+        createdBy: DEFAULT_USER_ID
+      }
+    });
+    
+    console.log('📊 Novo indicador criado:', newIndicator);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Indicador registrado com sucesso!',
+      data: newIndicator
+    });
+  } catch (error) {
+    console.error('Erro ao criar indicador:', error);
+    
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: 'Indicador duplicado'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Get indicators list
+app.get('/api/indicators', async (req, res) => {
+  try {
+    const { tenantId, patientId, type, limit = 50 } = req.query;
+    
+    const where = {};
+    if (tenantId) where.tenantId = tenantId;
+    if (patientId) where.patientId = patientId;
+    if (type) where.type = type;
+    
+    const indicators = await prisma.indicator.findMany({
+      where,
+      orderBy: {
+        measurementDate: 'desc'
+      },
+      take: parseInt(limit),
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+    
+    res.json({
+      success: true,
+      data: indicators,
+      total: indicators.length
+    });
+  } catch (error) {
+    console.error('Erro ao buscar indicadores:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Mock indicators endpoint (will be replaced with real data)
+app.get('/api/dashboard/:tenantId', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const { period = '30d' } = req.query;
+    
+    // Get indicators from database
+    const indicators = await prisma.indicator.findMany({
+      where: {
+        tenantId: tenantId
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    // Process indicators into dashboard format
+    const dashboardData = {};
+    const summary = {
+      total: 0,
+      onTarget: 0,
+      improving: 0,
+      deteriorating: 0,
+      performance: 0
+    };
+    
+    // Group indicators by type and calculate metrics
+    const indicatorsByType = {};
+    indicators.forEach(indicator => {
+      if (!indicatorsByType[indicator.type]) {
+        indicatorsByType[indicator.type] = [];
+      }
+      indicatorsByType[indicator.type].push(indicator);
+    });
+    
+    // Calculate summary
+    summary.total = Object.keys(indicatorsByType).length;
+    
+    res.json({
+      success: true,
+      data: {
+        period,
+        indicators: dashboardData,
+        summary
+      }
+    });
+  } catch (error) {
+    console.error('Erro no dashboard:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
 });
 
 // Generic not found
