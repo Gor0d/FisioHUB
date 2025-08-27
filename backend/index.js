@@ -301,6 +301,9 @@ app.get('/api/indicators/types', (req, res) => {
 // Create new indicator
 app.post('/api/indicators', async (req, res) => {
   try {
+    console.log('📊 Recebendo POST /api/indicators');
+    console.log('📊 Body:', req.body);
+    
     const { tenantId, type, value, targetValue, patientId, measurementDate, metadata } = req.body;
     
     // Validate required fields
@@ -331,6 +334,9 @@ app.post('/api/indicators', async (req, res) => {
       });
     }
     
+    console.log('📊 Configuração do indicador:', indicatorConfig);
+    console.log('📊 Tentando criar no banco...');
+    
     // Create indicator in database
     const newIndicator = await prisma.indicator.create({
       data: {
@@ -346,7 +352,7 @@ app.post('/api/indicators', async (req, res) => {
       }
     });
     
-    console.log('📊 Novo indicador criado:', newIndicator);
+    console.log('✅ Novo indicador criado:', newIndicator);
     
     res.status(201).json({
       success: true,
