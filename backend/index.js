@@ -310,44 +310,16 @@ app.post('/api/indicators', async (req, res) => {
   });
 });
 
-// Get indicators list
+// Get indicators list - SIMPLIFIED
 app.get('/api/indicators', async (req, res) => {
-  try {
-    const { tenantId, patientId, type, limit = 50 } = req.query;
-    
-    const where = {};
-    if (tenantId) where.tenantId = tenantId;
-    if (patientId) where.patientId = patientId;
-    if (type) where.type = type;
-    
-    const indicators = await prisma.indicator.findMany({
-      where,
-      orderBy: {
-        measurementDate: 'desc'
-      },
-      take: parseInt(limit),
-      include: {
-        patient: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
-    });
-    
-    res.json({
-      success: true,
-      data: indicators,
-      total: indicators.length
-    });
-  } catch (error) {
-    console.error('Erro ao buscar indicadores:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor'
-    });
-  }
+  console.log('🔥 GET /api/indicators ALCANÇADO!');
+  
+  res.json({
+    success: true,
+    data: [],
+    total: 0,
+    message: 'Debug: GET funcionando!'
+  });
 });
 
 // Dashboard with indicators data - SIMPLIFIED VERSION
