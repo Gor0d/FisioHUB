@@ -314,5 +314,3 @@ export default function AssessmentForm({ open, onOpenChange, selectedPatientId, 
     </Dialog>
   );
 }
-
-export default AssessmentForm;

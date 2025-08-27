@@ -312,5 +312,3 @@ export default function AssessmentHistory({ open, onOpenChange, patientId, tenan
     </Dialog>
   );
 }
-
-export default AssessmentHistory;
