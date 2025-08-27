@@ -18,6 +18,9 @@ const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const SlugSecurity = require('./utils/slug-security');
+const rateLimiters = require('./middleware/rate-limiting');
+const { securityHeaders, secureCorsOptions } = require('./middleware/security-headers');
+const InputValidator = require('./middleware/input-validation');
 
 const app = express();
 const port = process.env.API_PORT || process.env.PORT || 3001;
@@ -44,16 +47,30 @@ prisma.$connect()
 // Temporary in-memory storage for registered tenants (fallback)
 const registeredTenants = {};
 
-// Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://fisiohub.app',
-    'https://fisiohubtech.com.br'
-  ],
-  credentials: true
+// Security Middleware (must be first)
+app.use(securityHeaders());
+
+// CORS with security
+app.use(cors(secureCorsOptions));
+
+// Rate limiting for all requests
+app.use(rateLimiters.public);
+
+// Body parsing with size limits
+app.use(express.json({ 
+  limit: '1mb',
+  verify: (req, res, buf) => {
+    // Check for malformed JSON
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      throw new Error('JSON malformado');
+    }
+  }
 }));
-app.use(express.json());
+
+// Input validation for all requests
+app.use(InputValidator.validateInput);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -343,7 +360,10 @@ app.post('/api/migrate', async (req, res) => {
 });
 
 // Registration with real database
-app.post('/api/tenants/register', async (req, res) => {
+app.post('/api/tenants/register', 
+  rateLimiters.register,
+  InputValidator.validateRegistration,
+  async (req, res) => {
   try {
     console.log('Registration via index.js with database:', req.body);
     const { name, slug, email, password } = req.body;
