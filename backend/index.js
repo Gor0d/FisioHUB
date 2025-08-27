@@ -298,28 +298,109 @@ app.get('/api/indicators/types', (req, res) => {
   });
 });
 
-// Create new indicator - ULTRA SIMPLIFIED FOR DEBUG
-app.post('/api/indicators', (req, res) => {
-  console.log('🔥 POST ENDPOINT ALCANÇADO!');
-  console.log('🔥 Request body:', req.body);
-  
-  res.json({
-    success: true,
-    message: 'Debug: POST funcionando!',
-    data: req.body
-  });
+// Create new indicator
+app.post('/api/indicators', async (req, res) => {
+  try {
+    const { tenantId, type, value, targetValue, patientId, measurementDate, metadata } = req.body;
+    
+    // Validate required fields
+    if (!tenantId || !type || value === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Campos obrigatórios: tenantId, type, value'
+      });
+    }
+    
+    // Get indicator type configuration
+    const indicatorTypes = {
+      early_mobilization: { name: 'Mobilização Precoce', unit: '%', target: 80, format: 'percentage', category: 'mobility' },
+      mechanical_ventilation: { name: 'Tempo Ventilação Mecânica', unit: 'dias', target: 5, format: 'decimal', category: 'respiratory' },
+      functional_independence: { name: 'Independência Funcional', unit: 'pontos', target: 85, format: 'integer', category: 'functional' },
+      muscle_strength: { name: 'Força Muscular', unit: 'pontos', target: 48, format: 'integer', category: 'strength' },
+      hospital_stay: { name: 'Tempo de Internação', unit: 'dias', target: 12, format: 'decimal', category: 'efficiency' },
+      readmission_30d: { name: 'Readmissão 30 dias', unit: '%', target: 8, format: 'percentage', category: 'quality' },
+      patient_satisfaction: { name: 'Satisfação do Paciente', unit: 'pontos', target: 9, format: 'decimal', category: 'satisfaction' },
+      discharge_destination: { name: 'Alta para Casa', unit: '%', target: 75, format: 'percentage', category: 'outcomes' }
+    };
+    const indicatorConfig = indicatorTypes[type];
+    
+    if (!indicatorConfig) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tipo de indicador inválido'
+      });
+    }
+    
+    // Create indicator in database
+    const newIndicator = await prisma.indicator.create({
+      data: {
+        tenantId,
+        type,
+        value: parseFloat(value),
+        targetValue: targetValue || indicatorConfig.target,
+        unit: indicatorConfig.unit,
+        patientId: patientId || null,
+        measurementDate: measurementDate ? new Date(measurementDate) : new Date(),
+        metadata: metadata ? JSON.stringify(metadata) : null,
+        createdBy: DEFAULT_USER_ID
+      }
+    });
+    
+    console.log('📊 Novo indicador criado:', newIndicator);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Indicador registrado com sucesso!',
+      data: newIndicator
+    });
+  } catch (error) {
+    console.error('Erro ao criar indicador:', error);
+    
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: 'Indicador duplicado'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
-// Get indicators list - ULTRA SIMPLIFIED
-app.get('/api/indicators', (req, res) => {
-  console.log('🔥 GET /api/indicators ALCANÇADO!');
-  
-  res.json({
-    success: true,
-    data: [],
-    total: 0,
-    message: 'Debug: GET funcionando!'
-  });
+// Get indicators list
+app.get('/api/indicators', async (req, res) => {
+  try {
+    const { tenantId, patientId, type, limit = 50 } = req.query;
+    
+    const where = {};
+    if (tenantId) where.tenantId = tenantId;
+    if (patientId) where.patientId = patientId;
+    if (type) where.type = type;
+    
+    const indicators = await prisma.indicator.findMany({
+      where,
+      orderBy: {
+        measurementDate: 'desc'
+      },
+      take: parseInt(limit)
+    });
+    
+    res.json({
+      success: true,
+      data: indicators,
+      total: indicators.length
+    });
+  } catch (error) {
+    console.error('Erro ao buscar indicadores:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
 });
 
 // Dashboard with indicators data - SIMPLIFIED VERSION
