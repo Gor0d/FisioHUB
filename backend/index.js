@@ -301,6 +301,9 @@ app.get('/api/indicators/types', (req, res) => {
 // Create new indicator
 app.post('/api/indicators', async (req, res) => {
   try {
+    console.log('🔥 POST /api/indicators iniciado');
+    console.log('🔥 Body recebido:', req.body);
+    
     const { tenantId, type, value, targetValue, patientId, measurementDate, metadata } = req.body;
     
     // Validate required fields
@@ -332,6 +335,19 @@ app.post('/api/indicators', async (req, res) => {
     }
     
     // Create indicator in database
+    console.log('📊 Tentando criar no banco de dados...');
+    console.log('📊 Dados que serão inseridos:', {
+      tenantId,
+      type,
+      value: parseFloat(value),
+      targetValue: targetValue || indicatorConfig.target,
+      unit: indicatorConfig.unit,
+      patientId: patientId || null,
+      measurementDate: measurementDate ? new Date(measurementDate) : new Date(),
+      metadata: metadata ? JSON.stringify(metadata) : null,
+      createdBy: DEFAULT_USER_ID
+    });
+    
     const newIndicator = await prisma.indicator.create({
       data: {
         tenantId,
@@ -346,7 +362,7 @@ app.post('/api/indicators', async (req, res) => {
       }
     });
     
-    console.log('📊 Novo indicador criado:', newIndicator);
+    console.log('✅ Novo indicador criado:', newIndicator);
     
     res.status(201).json({
       success: true,
@@ -354,7 +370,10 @@ app.post('/api/indicators', async (req, res) => {
       data: newIndicator
     });
   } catch (error) {
-    console.error('Erro ao criar indicador:', error);
+    console.error('❌ ERRO ao criar indicador:', error);
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Error code:', error.code);
+    console.error('❌ Stack trace:', error.stack);
     
     if (error.code === 'P2002') {
       return res.status(409).json({
