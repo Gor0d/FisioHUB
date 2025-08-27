@@ -1,44 +1,15 @@
 const express = require('express');
 const cors = require('cors');
+const { PrismaClient } = require('@prisma/client');
 
 const app = express();
 const port = process.env.PORT || process.env.API_PORT || 3001;
 
-// In-memory storage for patients (in production this would be a database)
-let patients = [
-  {
-    id: 'patient_1',
-    name: 'João Silva',
-    attendanceNumber: 'ATD001',
-    bedNumber: '101A',
-    isActive: true,
-    admissionDate: '2025-08-25T10:00:00.000Z',
-    email: 'joao@email.com',
-    phone: '(11) 99999-0001',
-    birthDate: '1980-05-15T00:00:00.000Z',
-    address: 'Rua das Flores, 123',
-    diagnosis: 'Recuperação pós-cirúrgica',
-    observations: 'Paciente colaborativo',
-    createdAt: '2025-08-25T10:00:00.000Z',
-    updatedAt: '2025-08-25T10:00:00.000Z'
-  },
-  {
-    id: 'patient_2', 
-    name: 'Maria Santos',
-    attendanceNumber: 'ATD002',
-    bedNumber: '102B',
-    isActive: true,
-    admissionDate: '2025-08-26T14:30:00.000Z',
-    email: 'maria@email.com',
-    phone: '(11) 99999-0002',
-    birthDate: '1975-10-22T00:00:00.000Z',
-    address: 'Av. Principal, 456',
-    diagnosis: 'Fisioterapia motora',
-    observations: 'Necessita acompanhamento',
-    createdAt: '2025-08-26T14:30:00.000Z',
-    updatedAt: '2025-08-26T14:30:00.000Z'
-  }
-];
+// Initialize Prisma Client
+const prisma = new PrismaClient();
+
+// Default user ID for demo (in production this would come from authentication)
+const DEFAULT_USER_ID = 'demo_user_001';
 
 // Basic middleware
 app.use(cors());
@@ -102,78 +73,98 @@ app.get('/api/secure/:publicId/info', (req, res) => {
 });
 
 // Get all patients
-app.get('/api/patients', (req, res) => {
-  const { status } = req.query;
-  
-  let filteredPatients = patients;
-  
-  // Filter by status if provided
-  if (status === 'active') {
-    filteredPatients = patients.filter(patient => patient.isActive);
-  } else if (status === 'inactive') {
-    filteredPatients = patients.filter(patient => !patient.isActive);
+app.get('/api/patients', async (req, res) => {
+  try {
+    const { status } = req.query;
+    
+    // Build where clause
+    const where = {};
+    if (status === 'active') {
+      where.isActive = true;
+    } else if (status === 'inactive') {
+      where.isActive = false;
+    }
+    
+    const patients = await prisma.patient.findMany({
+      where,
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    res.json({
+      success: true,
+      data: patients,
+      total: patients.length
+    });
+  } catch (error) {
+    console.error('Erro ao buscar pacientes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
   }
-  
-  res.json({
-    success: true,
-    data: filteredPatients,
-    total: filteredPatients.length
-  });
 });
 
 // POST endpoint for creating new patients
-app.post('/api/patients', (req, res) => {
-  const { name, email, phone, attendanceNumber, bedNumber, admissionDate, birthDate, address, diagnosis, observations } = req.body;
-  
-  // Validate required fields
-  if (!name || !phone || !attendanceNumber || !admissionDate) {
-    return res.status(400).json({
+app.post('/api/patients', async (req, res) => {
+  try {
+    const { name, email, phone, attendanceNumber, bedNumber, admissionDate, birthDate, address, diagnosis, observations } = req.body;
+    
+    // Validate required fields
+    if (!name || !phone || !attendanceNumber || !admissionDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Campos obrigatórios: name, phone, attendanceNumber, admissionDate'
+      });
+    }
+    
+    // Check if attendanceNumber already exists
+    const existingPatient = await prisma.patient.findFirst({
+      where: {
+        attendanceNumber: attendanceNumber
+      }
+    });
+    
+    if (existingPatient) {
+      return res.status(409).json({
+        success: false,
+        message: 'Número de atendimento já existe'
+      });
+    }
+    
+    // Create new patient in database
+    const newPatient = await prisma.patient.create({
+      data: {
+        name,
+        email: email || null,
+        phone,
+        attendanceNumber,
+        bedNumber: bedNumber || null,
+        admissionDate: admissionDate ? new Date(admissionDate) : null,
+        birthDate: birthDate ? new Date(birthDate) : null,
+        address: address || null,
+        diagnosis: diagnosis || null,
+        observations: observations || null,
+        isActive: true,
+        userId: DEFAULT_USER_ID // Required by schema
+      }
+    });
+    
+    console.log('📝 Novo paciente criado no banco:', newPatient);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Paciente cadastrado com sucesso!',
+      data: newPatient
+    });
+  } catch (error) {
+    console.error('Erro ao criar paciente:', error);
+    res.status(500).json({
       success: false,
-      message: 'Campos obrigatórios: name, phone, attendanceNumber, admissionDate'
+      message: 'Erro interno do servidor'
     });
   }
-  
-  // Check if attendanceNumber already exists
-  const existingPatient = patients.find(p => p.attendanceNumber === attendanceNumber);
-  if (existingPatient) {
-    return res.status(409).json({
-      success: false,
-      message: 'Número de atendimento já existe'
-    });
-  }
-  
-  // Generate a patient ID
-  const patientId = `patient_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-  
-  // Create new patient
-  const newPatient = {
-    id: patientId,
-    name,
-    email: email || null,
-    phone,
-    attendanceNumber,
-    bedNumber: bedNumber || null,
-    admissionDate,
-    birthDate: birthDate || null,
-    address: address || null,
-    diagnosis: diagnosis || null,
-    observations: observations || null,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  
-  // Add to patients array
-  patients.push(newPatient);
-  
-  console.log('📝 Novo paciente criado e adicionado:', newPatient);
-  console.log('📊 Total de pacientes:', patients.length);
-  
-  res.status(201).json({
-    success: true,
-    message: 'Paciente cadastrado com sucesso!',
-    data: newPatient
-  });
 });
 
 // Mock indicators endpoint
