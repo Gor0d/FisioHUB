@@ -17,14 +17,19 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
-  BarChart3
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  TrendingUp,
+  Palette
 } from 'lucide-react';
 
 interface NavigationItem {
   label: string;
-  href: string;
+  href?: string;
   icon: React.ReactNode;
   isActive: boolean;
+  children?: NavigationItem[];
 }
 
 export default function TenantSidebar() {
@@ -32,6 +37,7 @@ export default function TenantSidebar() {
   const pathname = usePathname();
   const { tenant } = useTenant();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['indicators']); // Auto expand indicators
 
   const basePath = `/t/${slug}`;
 
@@ -50,9 +56,28 @@ export default function TenantSidebar() {
     },
     {
       label: 'Indicadores',
-      href: `${basePath}/indicators`,
       icon: <Activity className="h-4 w-4" />,
-      isActive: pathname.startsWith(`${basePath}/indicators`)
+      isActive: pathname.startsWith(`${basePath}/indicators`) || pathname.startsWith(`${basePath}/admin/branding`),
+      children: [
+        {
+          label: 'Dashboard Hospital',
+          href: `${basePath}/indicators-custom`,
+          icon: <TrendingUp className="h-4 w-4" />,
+          isActive: pathname === `${basePath}/indicators-custom`
+        },
+        {
+          label: 'Indicadores Padrão',
+          href: `${basePath}/indicators`,
+          icon: <Activity className="h-4 w-4" />,
+          isActive: pathname === `${basePath}/indicators`
+        },
+        {
+          label: 'Configurar Branding',
+          href: `${basePath}/admin/branding`,
+          icon: <Palette className="h-4 w-4" />,
+          isActive: pathname === `${basePath}/admin/branding`
+        }
+      ]
     },
     {
       label: 'Escalas MRC/Barthel',
@@ -79,6 +104,79 @@ export default function TenantSidebar() {
       isActive: pathname.startsWith(`${basePath}/reports`)
     }
   ];
+
+  const toggleExpanded = (itemLabel: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemLabel) 
+        ? prev.filter(item => item !== itemLabel)
+        : [...prev, itemLabel]
+    );
+  };
+
+  const isExpanded = (itemLabel: string) => {
+    return expandedItems.includes(itemLabel);
+  };
+
+  const renderNavigationItem = (item: NavigationItem, level: number = 0) => {
+    const hasChildren = item.children && item.children.length > 0;
+    
+    if (hasChildren) {
+      return (
+        <div key={item.label}>
+          {/* Parent Item */}
+          <Button
+            variant={item.isActive ? "default" : "ghost"}
+            onClick={() => !isCollapsed && toggleExpanded(item.label)}
+            className={cn(
+              "w-full justify-start gap-3 h-10",
+              isCollapsed && "justify-center px-2",
+              item.isActive && "bg-blue-600 text-white hover:bg-blue-700",
+              level > 0 && "ml-4 w-[calc(100%-1rem)]"
+            )}
+          >
+            {item.icon}
+            {!isCollapsed && (
+              <>
+                <span className="truncate flex-1 text-left">{item.label}</span>
+                {hasChildren && (
+                  isExpanded(item.label) ? 
+                    <ChevronUp className="h-4 w-4" /> : 
+                    <ChevronDown className="h-4 w-4" />
+                )}
+              </>
+            )}
+          </Button>
+
+          {/* Children Items */}
+          {!isCollapsed && isExpanded(item.label) && item.children && (
+            <div className="ml-6 mt-2 space-y-1">
+              {item.children.map((child) => renderNavigationItem(child, level + 1))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Regular item with href
+    return (
+      <Link key={item.label} href={item.href!}>
+        <Button
+          variant={item.isActive ? "default" : "ghost"}
+          className={cn(
+            "w-full justify-start gap-3 h-10",
+            isCollapsed && "justify-center px-2",
+            item.isActive && "bg-blue-600 text-white hover:bg-blue-700",
+            level > 0 && "ml-4 w-[calc(100%-1rem)] text-sm"
+          )}
+        >
+          {item.icon}
+          {!isCollapsed && (
+            <span className="truncate">{item.label}</span>
+          )}
+        </Button>
+      </Link>
+    );
+  };
 
   return (
     <aside 
@@ -119,23 +217,7 @@ export default function TenantSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
-        {navigationItems.map((item, index) => (
-          <Link key={index} href={item.href}>
-            <Button
-              variant={item.isActive ? "default" : "ghost"}
-              className={cn(
-                "w-full justify-start gap-3 h-10",
-                isCollapsed && "justify-center px-2",
-                item.isActive && "bg-blue-600 text-white hover:bg-blue-700"
-              )}
-            >
-              {item.icon}
-              {!isCollapsed && (
-                <span className="truncate">{item.label}</span>
-              )}
-            </Button>
-          </Link>
-        ))}
+        {navigationItems.map((item) => renderNavigationItem(item))}
       </nav>
 
       {/* Footer */}
