@@ -135,6 +135,10 @@ export default function BrandingAdminPage() {
           type: 'success',
           text: 'Logo enviado com sucesso!'
         });
+        // Refresh branding data to get updated logo URL
+        setTimeout(() => {
+          fetchBranding();
+        }, 1000);
       } else {
         throw new Error(data.message || 'Erro no upload');
       }

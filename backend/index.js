@@ -1022,8 +1022,11 @@ app.post('/api/admin/:tenantId/logo', upload.single('logo'), async (req, res) =>
       });
     }
     
-    // Generate logo URL
-    const logoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    // Generate logo URL - Use production API URL in Railway
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://api.fisiohub.app' 
+      : `${req.protocol}://${req.get('host')}`;
+    const logoUrl = `${baseUrl}/uploads/${req.file.filename}`;
     
     try {
       // Try to update in database
