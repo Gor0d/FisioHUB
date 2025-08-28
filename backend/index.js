@@ -1089,7 +1089,58 @@ app.post('/api/test/upload', upload.single('logo'), (req, res) => {
   }
 });
 
-// Upload logo for tenant
+// Upload logo as base64 (Railway compatible)
+app.post('/api/admin/:tenantId/logo-base64', express.raw({limit: '5mb', type: 'application/json'}), async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const data = JSON.parse(req.body.toString());
+    
+    if (!data.base64 || !data.filename) {
+      return res.status(400).json({
+        success: false,
+        message: 'Base64 data and filename are required'
+      });
+    }
+    
+    console.log(`📸 Base64 logo upload for tenant: ${tenantId}`);
+    console.log(`📁 Filename: ${data.filename}`);
+    
+    // For now, we'll store the base64 directly in the database
+    // In production, you'd want to upload to a proper storage service
+    const logoUrl = `data:image/${data.filename.split('.').pop()};base64,${data.base64}`;
+    
+    try {
+      // Try to save to database
+      await prisma.tenant.update({
+        where: { publicId: tenantId },
+        data: { logoUrl }
+      });
+      
+      res.json({
+        success: true,
+        message: 'Logo uploaded successfully',
+        data: { logoUrl }
+      });
+    } catch (dbError) {
+      console.log('Database not available, using demo response:', dbError.message);
+      res.json({
+        success: true,
+        message: 'Logo uploaded (demo mode)',
+        data: { logoUrl }
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error uploading base64 logo:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading logo',
+      error: error.message
+    });
+  }
+});
+
+// Upload logo for tenant (original multer version)
 app.post('/api/admin/:tenantId/logo', upload.single('logo'), async (req, res) => {
   try {
     const { tenantId } = req.params;

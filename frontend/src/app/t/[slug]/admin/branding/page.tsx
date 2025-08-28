@@ -115,40 +115,89 @@ export default function BrandingAdminPage() {
     const file = event.target.files?.[0];
     if (!file || !tenant?.publicId) return;
 
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
+      setMessage({
+        type: 'error',
+        text: 'Por favor, selecione apenas arquivos de imagem'
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      setMessage({
+        type: 'error', 
+        text: 'Arquivo muito grande. Máximo 5MB'
+      });
+      return;
+    }
+
     try {
       setUploading(true);
       setMessage(null);
 
-      const formData = new FormData();
-      formData.append('logo', file);
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const base64 = reader.result?.toString().split(',')[1]; // Remove data:image/...;base64, prefix
+          
+          if (!base64) {
+            throw new Error('Erro ao processar imagem');
+          }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/${tenant.publicId}/logo`, {
-        method: 'POST',
-        body: formData
-      });
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/${tenant.publicId}/logo-base64`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              base64,
+              filename: file.name
+            })
+          });
 
-      const data = await response.json();
+          const data = await response.json();
 
-      if (data.success) {
-        setBranding(prev => prev ? { ...prev, logoUrl: data.data.logoUrl } : null);
+          if (data.success) {
+            setBranding(prev => prev ? { ...prev, logoUrl: data.data.logoUrl } : null);
+            setMessage({
+              type: 'success',
+              text: 'Logo enviado com sucesso!'
+            });
+            // Refresh branding data to get updated logo URL
+            setTimeout(() => {
+              fetchBranding();
+            }, 1000);
+          } else {
+            throw new Error(data.message || 'Erro no upload');
+          }
+        } catch (err) {
+          console.error('Erro no upload:', err);
+          setMessage({
+            type: 'error',
+            text: err instanceof Error ? err.message : 'Erro no upload do logo'
+          });
+        } finally {
+          setUploading(false);
+        }
+      };
+
+      reader.onerror = () => {
         setMessage({
-          type: 'success',
-          text: 'Logo enviado com sucesso!'
+          type: 'error',
+          text: 'Erro ao ler o arquivo'
         });
-        // Refresh branding data to get updated logo URL
-        setTimeout(() => {
-          fetchBranding();
-        }, 1000);
-      } else {
-        throw new Error(data.message || 'Erro no upload');
-      }
+        setUploading(false);
+      };
+
+      reader.readAsDataURL(file);
     } catch (err) {
       console.error('Erro no upload:', err);
       setMessage({
         type: 'error',
-        text: err instanceof Error ? err.message : 'Erro no upload do logo'
+        text: 'Erro no upload do logo'
       });
-    } finally {
       setUploading(false);
     }
   };
