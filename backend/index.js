@@ -117,7 +117,10 @@ app.get('/health', (req, res) => {
     status: 'success',
     message: 'FisioHUB API is working!',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.3.0-multer-fix', // Force Railway rebuild
+    multer: 'installed',
+    uploadFeatures: true
   });
 });
 
