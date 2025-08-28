@@ -1090,12 +1090,12 @@ app.post('/api/test/upload', upload.single('logo'), (req, res) => {
 });
 
 // Upload logo as base64 (Railway compatible)
-app.post('/api/admin/:tenantId/logo-base64', express.raw({limit: '5mb', type: 'application/json'}), async (req, res) => {
+app.post('/api/admin/:tenantId/logo-base64', async (req, res) => {
   try {
     const { tenantId } = req.params;
-    const data = JSON.parse(req.body.toString());
+    const { base64, filename } = req.body;
     
-    if (!data.base64 || !data.filename) {
+    if (!base64 || !filename) {
       return res.status(400).json({
         success: false,
         message: 'Base64 data and filename are required'
@@ -1103,11 +1103,11 @@ app.post('/api/admin/:tenantId/logo-base64', express.raw({limit: '5mb', type: 'a
     }
     
     console.log(`📸 Base64 logo upload for tenant: ${tenantId}`);
-    console.log(`📁 Filename: ${data.filename}`);
+    console.log(`📁 Filename: ${filename}`);
     
     // For now, we'll store the base64 directly in the database
     // In production, you'd want to upload to a proper storage service
-    const logoUrl = `data:image/${data.filename.split('.').pop()};base64,${data.base64}`;
+    const logoUrl = `data:image/${filename.split('.').pop()};base64,${base64}`;
     
     try {
       // Try to save to database
