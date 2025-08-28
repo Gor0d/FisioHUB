@@ -312,8 +312,19 @@ export default function BrandingAdminPage() {
                   alt="Logo atual" 
                   className="max-h-24 mx-auto border rounded-lg p-2"
                 />
+                <div className="text-xs text-gray-500 mt-1 break-all">
+                  URL: {branding.logoUrl.substring(0, 100)}...
+                </div>
               </div>
             )}
+            
+            {/* Debug Info */}
+            <div className="text-xs text-gray-400 mt-2 p-2 bg-gray-100 rounded">
+              <strong>Debug:</strong><br/>
+              Logo URL existe: {branding?.logoUrl ? '✅ Sim' : '❌ Não'}<br/>
+              Tipo: {branding?.logoUrl?.startsWith('data:') ? '🎯 Base64' : branding?.logoUrl?.startsWith('http') ? '🌐 URL' : '❓ Outro'}<br/>
+              Tamanho: {branding?.logoUrl?.length || 0} caracteres
+            </div>
 
             {/* Upload Input */}
             <div>
