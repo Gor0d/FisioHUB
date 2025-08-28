@@ -176,26 +176,29 @@ export default function BrandingAdminPage() {
             // Create demo response with base64 data URI
             const logoUrl = `data:image/${file.type.split('/')[1]};base64,${base64}`;
             
-            // Update branding immediately (demo mode)
+            // Update branding immediately (demo mode)  
+            console.log('🎯 Demo mode: Setting logo URL to:', logoUrl);
             setBranding(prev => prev ? { ...prev, logoUrl } : null);
             setMessage({
               type: 'success',
               text: 'Logo atualizado com sucesso! (Funcionalidade ativa)'
             });
             setUploading(false);
+            
+            // Don't refresh from server in demo mode to preserve the logo
+            console.log('🎯 Demo mode: NOT calling fetchBranding to preserve logo');
             return;
           }
 
           if (data.success) {
+            console.log('🎯 API success: Setting logo URL to:', data.data.logoUrl);
             setBranding(prev => prev ? { ...prev, logoUrl: data.data.logoUrl } : null);
             setMessage({
               type: 'success',
               text: 'Logo enviado com sucesso!'
             });
-            // Refresh branding data to get updated logo URL
-            setTimeout(() => {
-              fetchBranding();
-            }, 1000);
+            // Don't refresh from server since we just got the updated data
+            console.log('🎯 API mode: NOT calling fetchBranding, using response data');
           } else {
             throw new Error(data.message || 'Erro no upload');
           }
