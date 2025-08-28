@@ -124,10 +124,10 @@ export default function BrandingAdminPage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB
+    if (file.size > 2 * 1024 * 1024) { // 2MB - Railway limit is smaller
       setMessage({
         type: 'error', 
-        text: 'Arquivo muito grande. Máximo 5MB'
+        text: 'Arquivo muito grande. Máximo 2MB'
       });
       return;
     }
@@ -136,14 +136,25 @@ export default function BrandingAdminPage() {
       setUploading(true);
       setMessage(null);
 
-      // Convert to base64
+      // Convert to base64 with compression
       const reader = new FileReader();
       reader.onload = async () => {
         try {
-          const base64 = reader.result?.toString().split(',')[1]; // Remove data:image/...;base64, prefix
+          let base64 = reader.result?.toString().split(',')[1]; // Remove data:image/...;base64, prefix
           
           if (!base64) {
             throw new Error('Erro ao processar imagem');
+          }
+
+          // If base64 is too long, show warning about compression
+          if (base64.length > 500000) { // ~375KB in base64
+            console.log('🎯 Large image detected, may need compression');
+            setMessage({
+              type: 'error',
+              text: 'Imagem muito grande. Tente uma imagem menor ou comprimida.'
+            });
+            setUploading(false);
+            return;
           }
 
           // Try base64 endpoint first, fallback if not available

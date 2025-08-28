@@ -965,7 +965,7 @@ app.get('/api/admin/:tenantId/branding', async (req, res) => {
     if (!brandingData) {
       if (tenantId === '0li0k7HNQslV') {
         brandingData = {
-          logoUrl: 'https://via.placeholder.com/200x80/1E40AF/white?text=HOSPITAL+GALILEU',
+          logoUrl: null, // Will be set when user uploads logo
           primaryColor: '#1E40AF',
           secondaryColor: '#3B82F6',
           dashboardTitle: 'Indicadores da Fisioterapia',
