@@ -48,6 +48,37 @@ app.use(express.json());
 // Static files middleware for uploaded logos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Debug endpoint to check uploads directory
+app.get('/api/debug/uploads', (req, res) => {
+  try {
+    const uploadsDir = path.join(__dirname, 'uploads');
+    const fs = require('fs');
+    
+    if (!fs.existsSync(uploadsDir)) {
+      return res.json({
+        success: false,
+        message: 'Uploads directory does not exist',
+        path: uploadsDir
+      });
+    }
+    
+    const files = fs.readdirSync(uploadsDir);
+    res.json({
+      success: true,
+      message: 'Uploads directory exists',
+      path: uploadsDir,
+      files: files,
+      count: files.length
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error checking uploads directory',
+      error: error.message
+    });
+  }
+});
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -1006,6 +1037,51 @@ app.put('/api/admin/:tenantId/branding', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Test upload endpoint (no database dependency)
+app.post('/api/test/upload', upload.single('logo'), (req, res) => {
+  try {
+    console.log('🔍 Test upload received');
+    console.log('File:', req.file ? 'YES' : 'NO');
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file received'
+      });
+    }
+    
+    console.log('File details:', {
+      filename: req.file.filename,
+      originalname: req.file.originalname,
+      size: req.file.size,
+      path: req.file.path
+    });
+    
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://api.fisiohub.app' 
+      : `${req.protocol}://${req.get('host')}`;
+    const logoUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    
+    res.json({
+      success: true,
+      message: 'Test upload successful',
+      data: {
+        logoUrl,
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        size: req.file.size
+      }
+    });
+  } catch (error) {
+    console.error('Test upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Test upload failed',
+      error: error.message
     });
   }
 });
