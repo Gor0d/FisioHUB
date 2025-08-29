@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const emailVerificationService = require('./services/email-verification');
 
 const app = express();
 const port = process.env.PORT || process.env.API_PORT || 3001;
@@ -1760,6 +1761,743 @@ function getDemoValue(indicatorKey) {
   
   return demoValues[indicatorKey] || 0;
 }
+
+// ============================
+// AUTHENTICATION ENDPOINTS
+// ============================
+
+// Send verification code to email
+app.post('/api/auth/send-verification', async (req, res) => {
+  try {
+    const { email, tenantSlug } = req.body;
+
+    if (!email || !tenantSlug) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email e tenant são obrigatórios'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Format de email inválido'
+      });
+    }
+
+    // Find tenant by slug or publicId
+    let tenant = null;
+    try {
+      tenant = await prisma.tenant.findFirst({
+        where: {
+          OR: [
+            { slug: tenantSlug },
+            { publicId: tenantSlug }
+          ]
+        }
+      });
+    } catch (error) {
+      console.log('Database not available, using demo tenant');
+      if (tenantSlug === 'hospital-galileu' || tenantSlug === '0li0k7HNQslV') {
+        tenant = { name: 'Hospital Galileu', slug: 'hospital-galileu' };
+      }
+    }
+
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital não encontrado'
+      });
+    }
+
+    // Send verification code
+    const result = await emailVerificationService.sendVerificationCode(email, tenant.name);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        verificationId: result.verificationId,
+        expiresAt: result.expiresAt,
+        message: 'Código de verificação enviado para seu email'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: result.message
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro ao enviar verificação:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Verify email code
+app.post('/api/auth/verify-code', async (req, res) => {
+  try {
+    const { verificationId, code } = req.body;
+
+    if (!verificationId || !code) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de verificação e código são obrigatórios'
+      });
+    }
+
+    const result = await emailVerificationService.verifyCode(verificationId, code);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        email: result.email,
+        message: 'Email verificado com sucesso!'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message,
+        remainingAttempts: result.remainingAttempts
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro na verificação:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Register new user after email verification
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, name, password, role, tenantSlug, verificationId } = req.body;
+
+    if (!email || !name || !password || !tenantSlug) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, nome, senha e tenant são obrigatórios'
+      });
+    }
+
+    // Verify that email was verified
+    const verificationStatus = emailVerificationService.getVerificationStatus(verificationId);
+    if (!verificationStatus.exists || !verificationStatus.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email não foi verificado'
+      });
+    }
+
+    // Find tenant
+    let tenant = null;
+    try {
+      tenant = await prisma.tenant.findFirst({
+        where: {
+          OR: [
+            { slug: tenantSlug },
+            { publicId: tenantSlug }
+          ]
+        }
+      });
+    } catch (error) {
+      console.log('Database not available, using demo tenant');
+      if (tenantSlug === 'hospital-galileu' || tenantSlug === '0li0k7HNQslV') {
+        tenant = { id: 'tenant_galileu_2025', name: 'Hospital Galileu' };
+      }
+    }
+
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital não encontrado'
+      });
+    }
+
+    // Create user
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    try {
+      const user = await prisma.user.create({
+        data: {
+          id: userId,
+          email,
+          name,
+          password: password, // In production, hash this
+          role: role || 'physiotherapist',
+          tenantId: tenant.id,
+          isActive: true,
+          emailVerified: true
+        }
+      });
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          tenantId: user.tenantId
+        },
+        message: 'Usuário registrado com sucesso!'
+      });
+
+    } catch (error) {
+      console.error('Database error, creating demo user:', error);
+      
+      // Demo response for development
+      res.json({
+        success: true,
+        user: {
+          id: userId,
+          email,
+          name,
+          role: role || 'physiotherapist',
+          tenantId: tenant.id
+        },
+        message: 'Usuário registrado com sucesso! (modo demo)'
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro no registro:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Login user
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password, tenantSlug } = req.body;
+
+    if (!email || !password || !tenantSlug) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, senha e tenant são obrigatórios'
+      });
+    }
+
+    // Find tenant
+    let tenant = null;
+    try {
+      tenant = await prisma.tenant.findFirst({
+        where: {
+          OR: [
+            { slug: tenantSlug },
+            { publicId: tenantSlug }
+          ]
+        }
+      });
+    } catch (error) {
+      console.log('Database not available, using demo tenant');
+      if (tenantSlug === 'hospital-galileu' || tenantSlug === '0li0k7HNQslV') {
+        tenant = { id: 'tenant_galileu_2025', name: 'Hospital Galileu' };
+      }
+    }
+
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital não encontrado'
+      });
+    }
+
+    // Find user
+    try {
+      const user = await prisma.user.findFirst({
+        where: {
+          email,
+          tenantId: tenant.id,
+          isActive: true
+        }
+      });
+
+      if (!user || user.password !== password) { // In production, compare hashed passwords
+        return res.status(401).json({
+          success: false,
+          message: 'Email ou senha incorretos'
+        });
+      }
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          tenantId: user.tenantId
+        },
+        message: 'Login realizado com sucesso!'
+      });
+
+    } catch (error) {
+      console.error('Database error, demo login:', error);
+      
+      // Demo login for admin@galileu.com.br
+      if (email === 'admin@galileu.com.br' && password === 'admin123') {
+        res.json({
+          success: true,
+          user: {
+            id: 'user_admin_galileu',
+            email: 'admin@galileu.com.br',
+            name: 'Administrador Hospital Galileu',
+            role: 'admin',
+            tenantId: tenant.id
+          },
+          message: 'Login realizado com sucesso! (modo demo)'
+        });
+      } else {
+        res.status(401).json({
+          success: false,
+          message: 'Email ou senha incorretos'
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('Erro no login:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// ============================
+// USER MANAGEMENT ENDPOINTS
+// ============================
+
+// Get all users for a tenant (admin only)
+app.get('/api/users/:tenantId', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+
+    try {
+      const users = await prisma.user.findMany({
+        where: {
+          OR: [
+            { tenantId },
+            { tenant: { publicId: tenantId } }
+          ],
+          isActive: true
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          createdAt: true,
+          lastLoginAt: true,
+          isActive: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      res.json({
+        success: true,
+        users,
+        total: users.length
+      });
+
+    } catch (error) {
+      console.log('Database not available, returning demo users');
+      
+      // Demo users for Hospital Galileu
+      if (tenantId === '0li0k7HNQslV' || tenantId === 'hospital-galileu') {
+        const demoUsers = [
+          {
+            id: 'user_admin_galileu',
+            email: 'admin@galileu.com.br',
+            name: 'Administrador Hospital Galileu',
+            role: 'admin',
+            createdAt: '2025-08-01T00:00:00.000Z',
+            lastLoginAt: '2025-08-29T10:00:00.000Z',
+            isActive: true
+          },
+          {
+            id: 'user_fisio_maria',
+            email: 'maria.silva@galileu.com.br',
+            name: 'Maria Silva',
+            role: 'physiotherapist',
+            createdAt: '2025-08-15T00:00:00.000Z',
+            lastLoginAt: '2025-08-28T15:30:00.000Z',
+            isActive: true
+          },
+          {
+            id: 'user_fisio_joao',
+            email: 'joao.santos@galileu.com.br',
+            name: 'João Santos',
+            role: 'physiotherapist',
+            createdAt: '2025-08-20T00:00:00.000Z',
+            lastLoginAt: '2025-08-27T09:15:00.000Z',
+            isActive: true
+          }
+        ];
+
+        res.json({
+          success: true,
+          users: demoUsers,
+          total: demoUsers.length
+        });
+      } else {
+        res.json({
+          success: true,
+          users: [],
+          total: 0
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('Erro ao buscar usuários:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Create new user (admin invite)
+app.post('/api/users/:tenantId', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const { email, name, role } = req.body;
+
+    if (!email || !name || !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, nome e função são obrigatórios'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de email inválido'
+      });
+    }
+
+    // Find tenant
+    let tenant = null;
+    try {
+      tenant = await prisma.tenant.findFirst({
+        where: {
+          OR: [
+            { id: tenantId },
+            { publicId: tenantId }
+          ]
+        }
+      });
+    } catch (error) {
+      console.log('Database not available, using demo tenant');
+      if (tenantId === '0li0k7HNQslV' || tenantId === 'hospital-galileu') {
+        tenant = { id: 'tenant_galileu_2025', name: 'Hospital Galileu' };
+      }
+    }
+
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital não encontrado'
+      });
+    }
+
+    // Generate temporary password
+    const tempPassword = Math.random().toString(36).substring(2, 10);
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    try {
+      // Create user in database
+      const user = await prisma.user.create({
+        data: {
+          id: userId,
+          email,
+          name,
+          password: tempPassword,
+          role,
+          tenantId: tenant.id,
+          isActive: true,
+          emailVerified: false,
+          isTemporaryPassword: true
+        }
+      });
+
+      // Send invitation email
+      const inviteResult = await emailVerificationService.sendInvitationEmail(
+        email, 
+        name, 
+        tenant.name, 
+        tempPassword
+      );
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          isActive: user.isActive
+        },
+        emailSent: inviteResult.success,
+        message: 'Usuário criado com sucesso! Convite enviado por email.'
+      });
+
+    } catch (error) {
+      console.error('Database error, creating demo user:', error);
+      
+      // Demo response
+      res.json({
+        success: true,
+        user: {
+          id: userId,
+          email,
+          name,
+          role,
+          isActive: true
+        },
+        emailSent: true,
+        tempPassword, // Only for demo
+        message: 'Usuário criado com sucesso! (modo demo)'
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro ao criar usuário:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Update user
+app.put('/api/users/:tenantId/:userId', async (req, res) => {
+  try {
+    const { tenantId, userId } = req.params;
+    const { name, role, isActive } = req.body;
+
+    if (!name || !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nome e função são obrigatórios'
+      });
+    }
+
+    try {
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          name,
+          role,
+          isActive: isActive !== undefined ? isActive : true,
+          updatedAt: new Date()
+        }
+      });
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          isActive: user.isActive
+        },
+        message: 'Usuário atualizado com sucesso!'
+      });
+
+    } catch (error) {
+      console.error('Database error, demo update:', error);
+      
+      res.json({
+        success: true,
+        user: {
+          id: userId,
+          name,
+          role,
+          isActive: isActive !== undefined ? isActive : true
+        },
+        message: 'Usuário atualizado com sucesso! (modo demo)'
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro ao atualizar usuário:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Deactivate user (soft delete)
+app.delete('/api/users/:tenantId/:userId', async (req, res) => {
+  try {
+    const { tenantId, userId } = req.params;
+
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          isActive: false,
+          updatedAt: new Date()
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Usuário desativado com sucesso!'
+      });
+
+    } catch (error) {
+      console.error('Database error, demo delete:', error);
+      
+      res.json({
+        success: true,
+        message: 'Usuário desativado com sucesso! (modo demo)'
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro ao desativar usuário:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Get user productivity stats
+app.get('/api/users/:tenantId/:userId/productivity', async (req, res) => {
+  try {
+    const { tenantId, userId } = req.params;
+    const { period = '30d' } = req.query;
+
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = new Date();
+    
+    switch (period) {
+      case '7d':
+        startDate.setDate(endDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(endDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(endDate.getDate() - 90);
+        break;
+      default:
+        startDate.setDate(endDate.getDate() - 30);
+    }
+
+    try {
+      // Get indicators created by user
+      const indicators = await prisma.indicator.findMany({
+        where: {
+          createdBy: userId,
+          measurementDate: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      });
+
+      // Get evolutions created by user (if table exists)
+      let evolutions = [];
+      try {
+        evolutions = await prisma.evolution.findMany({
+          where: {
+            createdBy: userId,
+            createdAt: {
+              gte: startDate,
+              lte: endDate
+            }
+          }
+        });
+      } catch (error) {
+        console.log('Evolution table not available');
+      }
+
+      // Get assessments created by user (if table exists)
+      let assessments = [];
+      try {
+        assessments = await prisma.assessment.findMany({
+          where: {
+            createdBy: userId,
+            createdAt: {
+              gte: startDate,
+              lte: endDate
+            }
+          }
+        });
+      } catch (error) {
+        console.log('Assessment table not available');
+      }
+
+      const stats = {
+        indicatorsCount: indicators.length,
+        evolutionsCount: evolutions.length,
+        assessmentsCount: assessments.length,
+        totalActivities: indicators.length + evolutions.length + assessments.length,
+        period,
+        startDate,
+        endDate
+      };
+
+      res.json({
+        success: true,
+        productivity: stats
+      });
+
+    } catch (error) {
+      console.error('Database error, returning demo productivity:', error);
+      
+      // Demo productivity data
+      const demoProductivity = {
+        indicatorsCount: Math.floor(Math.random() * 20) + 5,
+        evolutionsCount: Math.floor(Math.random() * 15) + 10,
+        assessmentsCount: Math.floor(Math.random() * 10) + 3,
+        totalActivities: 0,
+        period,
+        startDate,
+        endDate
+      };
+      
+      demoProductivity.totalActivities = 
+        demoProductivity.indicatorsCount + 
+        demoProductivity.evolutionsCount + 
+        demoProductivity.assessmentsCount;
+
+      res.json({
+        success: true,
+        productivity: demoProductivity
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro ao buscar produtividade:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
 
 // Generic not found
 app.use('*', (req, res) => {

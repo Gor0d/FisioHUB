@@ -254,6 +254,41 @@ class EmailVerificationService {
   }
 
   /**
+   * Send invitation email with temporary password
+   */
+  async sendInvitationEmail(email, name, tenantName, tempPassword) {
+    try {
+      const emailResult = await emailService.sendInvitationEmail(
+        email, 
+        name, 
+        tenantName, 
+        tempPassword
+      );
+
+      if (emailResult.success) {
+        console.log(`✅ Convite enviado para ${email}`);
+        return {
+          success: true,
+          message: 'Convite enviado com sucesso'
+        };
+      } else {
+        console.error('❌ Falha no envio do convite:', emailResult.error);
+        return {
+          success: false,
+          message: 'Erro ao enviar convite por email'
+        };
+      }
+
+    } catch (error) {
+      console.error('❌ Erro no serviço de convite:', error);
+      return {
+        success: false,
+        message: 'Erro interno do servidor'
+      };
+    }
+  }
+
+  /**
    * Get statistics for monitoring
    */
   getStats() {
