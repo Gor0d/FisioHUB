@@ -152,7 +152,7 @@ export default function CollaboratorsPage() {
         setShowAddDialog(false);
         
         // Show success message with login credentials
-        alert(`Colaborador criado com sucesso!\n\nLogin: ${data.user.login}\nSenha: ${data.user.password}\n\nAnote essas informações!`);
+        alert(`Colaborador criado com sucesso!\n\nLogin: ${data.user.login}\nSenha padrão: fisio123\n\nO colaborador pode alterar a senha após o primeiro login.`);
       } else {
         alert(`Erro: ${data.message}`);
       }

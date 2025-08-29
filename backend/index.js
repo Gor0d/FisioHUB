@@ -2218,9 +2218,9 @@ app.post('/api/users/:tenantId', async (req, res) => {
       });
     }
 
-    // Generate automatic login and password
+    // Generate automatic login with standard password
     const login = name.toLowerCase().replace(/\s+/g, '.').replace(/[^\w.]/g, '');
-    const password = `${login}${Math.floor(Math.random() * 1000)}`;
+    const password = 'fisio123'; // Standard password for all users
     const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Process shifts (array of shift objects)
@@ -2257,7 +2257,7 @@ app.post('/api/users/:tenantId', async (req, res) => {
           isActive: user.isActive,
           createdAt: new Date().toISOString()
         },
-        message: 'Colaborador criado com sucesso!'
+        message: 'Colaborador criado com sucesso! Senha padrão: fisio123'
       });
 
     } catch (error) {
@@ -2277,7 +2277,7 @@ app.post('/api/users/:tenantId', async (req, res) => {
           isActive: true,
           createdAt: new Date().toISOString()
         },
-        message: 'Colaborador criado com sucesso! (modo demo)'
+        message: 'Colaborador criado com sucesso! Senha padrão: fisio123 (modo demo)'
       });
     }
 
