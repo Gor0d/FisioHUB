@@ -1984,7 +1984,7 @@ app.post('/api/auth/login', async (req, res) => {
     if (!email || !password || !tenantSlug) {
       return res.status(400).json({
         success: false,
-        message: 'Email, senha e tenant são obrigatórios'
+        message: 'Login, senha e tenant são obrigatórios'
       });
     }
 
@@ -2013,11 +2013,14 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    // Find user
+    // Find user (by email or by login name)
     try {
       const user = await prisma.user.findFirst({
         where: {
-          email,
+          OR: [
+            { email }, // Try by email first
+            { email: `${email}@${tenant.name.toLowerCase().replace(/\s+/g, '')}.local` } // Try constructed email
+          ],
           tenantId: tenant.id,
           isActive: true
         }
@@ -2026,7 +2029,7 @@ app.post('/api/auth/login', async (req, res) => {
       if (!user || user.password !== password) { // In production, compare hashed passwords
         return res.status(401).json({
           success: false,
-          message: 'Email ou senha incorretos'
+          message: 'Login ou senha incorretos'
         });
       }
 
@@ -2045,15 +2048,23 @@ app.post('/api/auth/login', async (req, res) => {
     } catch (error) {
       console.error('Database error, demo login:', error);
       
-      // Demo login for admin@galileu.com.br
-      if (email === 'admin@galileu.com.br' && password === 'admin123') {
+      // Demo login options
+      const demoLogins = {
+        'admin@galileu.com.br': { password: 'admin123', name: 'Administrador Hospital Galileu', role: 'admin' },
+        'admin.teste': { password: 'fisio123', name: 'Admin Teste', role: 'admin' },
+        'maria.silva': { password: 'fisio123', name: 'Maria Silva', role: 'physiotherapist' },
+        'joao.santos': { password: 'fisio123', name: 'João Santos', role: 'physiotherapist' }
+      };
+
+      const demoUser = demoLogins[email];
+      if (demoUser && password === demoUser.password) {
         res.json({
           success: true,
           user: {
-            id: 'user_admin_galileu',
-            email: 'admin@galileu.com.br',
-            name: 'Administrador Hospital Galileu',
-            role: 'admin',
+            id: `user_${email.replace(/[@.]/g, '_')}`,
+            email: email.includes('@') ? email : `${email}@hospitalgalileu.local`,
+            name: demoUser.name,
+            role: demoUser.role,
             tenantId: tenant.id
           },
           message: 'Login realizado com sucesso! (modo demo)'
@@ -2061,7 +2072,7 @@ app.post('/api/auth/login', async (req, res) => {
       } else {
         res.status(401).json({
           success: false,
-          message: 'Email ou senha incorretos'
+          message: 'Login ou senha incorretos'
         });
       }
     }

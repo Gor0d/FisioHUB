@@ -59,15 +59,15 @@ export default function TenantLoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Login</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="email"
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Digite seu email"
+                  placeholder="Digite seu login (ex: admin.teste)"
                   className="pl-10"
                   required
                   disabled={loading}
@@ -108,8 +108,12 @@ export default function TenantLoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-600">
-            <p>Senha padrão para novos usuários: <strong>fisio123</strong></p>
-            <p className="mt-1">Exemplo de login: maria.silva</p>
+            <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-400 mb-4">
+              <p className="font-semibold text-blue-800">Credenciais de teste:</p>
+              <p className="mt-1"><strong>Login:</strong> admin.teste</p>
+              <p><strong>Senha:</strong> fisio123</p>
+            </div>
+            <p className="text-xs">Padrão para novos colaboradores: fisio123</p>
           </div>
         </CardContent>
       </Card>
