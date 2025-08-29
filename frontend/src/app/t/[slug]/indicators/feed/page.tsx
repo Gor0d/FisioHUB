@@ -222,7 +222,7 @@ export default function IndicatorsFeedPage() {
 
             <div className="space-y-2">
               <Label htmlFor="sector">Setor</Label>
-              <Select value={formData.sector} onValueChange={handleSectorChange} required>
+              <Select value={formData.sector} onValueChange={handleSectorChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o setor" />
                 </SelectTrigger>
