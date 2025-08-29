@@ -1,6 +1,7 @@
 'use client';
 
 import { TenantProvider } from '@/hooks/use-tenant';
+import { AuthProvider } from '@/contexts/auth-context';
 import TenantLayout from '@/components/tenant/tenant-layout';
 
 export default function TenantPageLayout({
@@ -9,10 +10,12 @@ export default function TenantPageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <TenantProvider>
-      <TenantLayout>
-        {children}
-      </TenantLayout>
-    </TenantProvider>
+    <AuthProvider>
+      <TenantProvider>
+        <TenantLayout>
+          {children}
+        </TenantLayout>
+      </TenantProvider>
+    </AuthProvider>
   );
 }

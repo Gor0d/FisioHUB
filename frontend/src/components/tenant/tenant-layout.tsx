@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import TenantSidebar from './tenant-sidebar';
+import { AuthGuard } from '@/components/auth/auth-guard';
 import { useTenant } from '@/hooks/use-tenant';
 
 interface TenantLayoutProps {
@@ -11,6 +13,10 @@ interface TenantLayoutProps {
 export default function TenantLayout({ children }: TenantLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { loading } = useTenant();
+  const pathname = usePathname();
+  
+  // Don't require auth for login page
+  const isLoginPage = pathname.endsWith('/login');
 
   if (loading) {
     return (
@@ -23,22 +29,28 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
     );
   }
 
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <TenantSidebar />
-      
-      {/* Main Content */}
-      <main 
-        className="flex-1 transition-all duration-300 ml-64"
-        style={{ 
-          marginLeft: sidebarCollapsed ? '4rem' : '16rem'
-        }}
-      >
-        <div className="min-h-screen">
-          {children}
-        </div>
-      </main>
-    </div>
+    <AuthGuard requireAuth={true}>
+      <div className="flex min-h-screen bg-gray-50">
+        {/* Sidebar */}
+        <TenantSidebar />
+        
+        {/* Main Content */}
+        <main 
+          className="flex-1 transition-all duration-300 ml-64"
+          style={{ 
+            marginLeft: sidebarCollapsed ? '4rem' : '16rem'
+          }}
+        >
+          <div className="min-h-screen">
+            {children}
+          </div>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }

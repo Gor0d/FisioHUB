@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
 import { useTenant } from '@/hooks/use-tenant';
+import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -21,7 +22,9 @@ import {
   ChevronDown,
   ChevronUp,
   TrendingUp,
-  Palette
+  Palette,
+  LogOut,
+  User
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -36,6 +39,7 @@ export default function TenantSidebar() {
   const { slug } = useParams();
   const pathname = usePathname();
   const { tenant } = useTenant();
+  const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>(['indicators']); // Auto expand indicators
 
@@ -226,8 +230,24 @@ export default function TenantSidebar() {
         {navigationItems.map((item) => renderNavigationItem(item))}
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
+      {/* User Info & Footer */}
+      <div className="p-4 border-t border-gray-200 space-y-2">
+        {/* User Info */}
+        {!isCollapsed && user && (
+          <div className="mb-3 p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-sm text-gray-900 truncate">{user.name}</p>
+                <p className="text-xs text-gray-500 truncate">{user.role === 'admin' ? 'Administrador' : 'Fisioterapeuta'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Settings */}
         <Link href={`${basePath}/settings`}>
           <Button
             variant="ghost"
@@ -240,6 +260,19 @@ export default function TenantSidebar() {
             {!isCollapsed && <span>Configurações</span>}
           </Button>
         </Link>
+
+        {/* Logout */}
+        <Button
+          variant="ghost"
+          onClick={logout}
+          className={cn(
+            "w-full justify-start gap-3 h-10 text-red-600 hover:text-red-700 hover:bg-red-50",
+            isCollapsed && "justify-center px-2"
+          )}
+        >
+          <LogOut className="h-4 w-4" />
+          {!isCollapsed && <span>Sair</span>}
+        </Button>
       </div>
     </aside>
   );

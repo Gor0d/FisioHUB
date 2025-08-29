@@ -41,21 +41,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (data: LoginInput) => {
     try {
-      const response = await authApi.login(data);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
       
-      if (response.success && response.data) {
-        const { user: userData, token } = response.data;
+      if (result.success && result.user) {
+        const userData = result.user;
         
         if (typeof window !== 'undefined') {
-          localStorage.setItem('fisiohub-token', token);
+          localStorage.setItem('fisiohub-token', result.token || 'demo-token');
           localStorage.setItem('fisiohub-user', JSON.stringify(userData));
         }
         setUser(userData);
       } else {
-        throw new Error(response.message || 'Login failed');
+        throw new Error(result.message || 'Login failed');
       }
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Login failed');
+      throw new Error(error.message || 'Login failed');
     }
   };
 
