@@ -1376,6 +1376,71 @@ app.get('/api/indicators/custom-dashboard/:tenantId', async (req, res) => {
 });
 
 // Endpoint for manual indicator feeding by shift
+// Feed multiple indicators at once (bulk feed)
+app.post('/api/indicators/feed-bulk/:tenantId', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const { date, shift, sector, sectorType, collaborator, indicators } = req.body;
+
+    if (!date || !shift || !sector || !indicators) {
+      return res.status(400).json({
+        success: false,
+        message: 'Data, turno, setor e indicadores são obrigatórios'
+      });
+    }
+
+    const validShifts = ['manha', 'tarde', 'noite'];
+    if (!validShifts.includes(shift)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Turno inválido. Válidos: manha, tarde, noite'
+      });
+    }
+
+    // Process each indicator
+    const results = [];
+    const timestamp = new Date().toISOString();
+    
+    for (const [indicatorKey, value] of Object.entries(indicators)) {
+      if (value && value !== '' && value !== '0') {
+        const result = {
+          id: `bulk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          indicatorKey,
+          value: parseInt(value as string),
+          shift,
+          sector,
+          sectorType,
+          collaborator,
+          date,
+          timestamp,
+          tenantId
+        };
+        results.push(result);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `${results.length} indicadores salvos com sucesso para o turno ${shift} (modo demo)`,
+      data: {
+        count: results.length,
+        indicators: results.map(r => ({ key: r.indicatorKey, value: r.value })),
+        shift,
+        sector,
+        collaborator,
+        date
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao processar indicadores em lote:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
 app.post('/api/indicators/feed/:tenantId', async (req, res) => {
   try {
     const { tenantId } = req.params;

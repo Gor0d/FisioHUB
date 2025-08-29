@@ -76,6 +76,12 @@ export default function TenantSidebar() {
           isActive: pathname === `${basePath}/indicators`
         },
         {
+          label: 'Alimentar Indicadores',
+          href: `${basePath}/indicators/feed`,
+          icon: <FileText className="h-4 w-4" />,
+          isActive: pathname === `${basePath}/indicators/feed`
+        },
+        {
           label: 'Configurar Branding',
           href: `${basePath}/admin/branding`,
           icon: <Palette className="h-4 w-4" />,
