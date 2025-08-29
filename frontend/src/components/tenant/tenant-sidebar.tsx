@@ -92,6 +92,12 @@ export default function TenantSidebar() {
       isActive: pathname.startsWith(`${basePath}/evolutions`)
     },
     {
+      label: 'Colaboradores',
+      href: `${basePath}/admin/collaborators`,
+      icon: <UserPlus className="h-4 w-4" />,
+      isActive: pathname.startsWith(`${basePath}/admin/collaborators`)
+    },
+    {
       label: 'Fisioterapeutas',
       href: `${basePath}/staff`,
       icon: <UserPlus className="h-4 w-4" />,
