@@ -41,6 +41,8 @@ interface ProductivityStats {
   assessmentsCount: number;
   totalActivities: number;
   period: string;
+  startDate: string;
+  endDate: string;
 }
 
 export default function CollaboratorsPage() {
