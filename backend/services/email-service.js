@@ -12,7 +12,7 @@ class EmailService {
     
     switch (emailProvider) {
       case 'sendgrid':
-        return nodemailer.createTransporter({
+        return nodemailer.createTransport({
           service: 'SendGrid',
           auth: {
             user: 'apikey',
@@ -21,7 +21,7 @@ class EmailService {
         });
       
       case 'resend':
-        return nodemailer.createTransporter({
+        return nodemailer.createTransport({
           host: 'smtp.resend.com',
           port: 587,
           secure: false,
@@ -33,7 +33,7 @@ class EmailService {
       
       case 'gmail':
       default:
-        return nodemailer.createTransporter({
+        return nodemailer.createTransport({
           service: 'gmail',
           auth: {
             user: process.env.EMAIL_USER,
