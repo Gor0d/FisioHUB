@@ -2097,7 +2097,9 @@ app.get('/api/users/:tenantId', async (req, res) => {
           id: true,
           email: true,
           name: true,
+          phone: true,
           role: true,
+          shifts: true,
           createdAt: true,
           lastLoginAt: true,
           isActive: true
@@ -2121,7 +2123,9 @@ app.get('/api/users/:tenantId', async (req, res) => {
             id: 'user_admin_galileu',
             email: 'admin@galileu.com.br',
             name: 'Administrador Hospital Galileu',
+            phone: '(11) 99999-0000',
             role: 'admin',
+            shifts: JSON.stringify([{id: 1, name: 'Administrativo', hours: '08:00-17:00'}]),
             createdAt: '2025-08-01T00:00:00.000Z',
             lastLoginAt: '2025-08-29T10:00:00.000Z',
             isActive: true
@@ -2130,7 +2134,12 @@ app.get('/api/users/:tenantId', async (req, res) => {
             id: 'user_fisio_maria',
             email: 'maria.silva@galileu.com.br',
             name: 'Maria Silva',
+            phone: '(11) 99999-1111',
             role: 'physiotherapist',
+            shifts: JSON.stringify([
+              {id: 1, name: 'Matutino', hours: '06:00-18:00'},
+              {id: 2, name: 'Plantão', hours: '18:00-06:00'}
+            ]),
             createdAt: '2025-08-15T00:00:00.000Z',
             lastLoginAt: '2025-08-28T15:30:00.000Z',
             isActive: true
@@ -2139,7 +2148,9 @@ app.get('/api/users/:tenantId', async (req, res) => {
             id: 'user_fisio_joao',
             email: 'joao.santos@galileu.com.br',
             name: 'João Santos',
+            phone: '(11) 99999-2222',
             role: 'physiotherapist',
+            shifts: JSON.stringify([{id: 1, name: 'Vespertino', hours: '12:00-00:00'}]),
             createdAt: '2025-08-20T00:00:00.000Z',
             lastLoginAt: '2025-08-27T09:15:00.000Z',
             isActive: true
@@ -2169,25 +2180,16 @@ app.get('/api/users/:tenantId', async (req, res) => {
   }
 });
 
-// Create new user (admin invite)
+// Create new collaborator (simplified system)
 app.post('/api/users/:tenantId', async (req, res) => {
   try {
     const { tenantId } = req.params;
-    const { email, name, role } = req.body;
+    const { name, phone, role, shifts, email } = req.body;
 
-    if (!email || !name || !role) {
+    if (!name || !phone || !role) {
       return res.status(400).json({
         success: false,
-        message: 'Email, nome e função são obrigatórios'
-      });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Formato de email inválido'
+        message: 'Nome, telefone e cargo são obrigatórios'
       });
     }
 
@@ -2216,63 +2218,66 @@ app.post('/api/users/:tenantId', async (req, res) => {
       });
     }
 
-    // Generate temporary password
-    const tempPassword = Math.random().toString(36).substring(2, 10);
+    // Generate automatic login and password
+    const login = name.toLowerCase().replace(/\s+/g, '.').replace(/[^\w.]/g, '');
+    const password = `${login}${Math.floor(Math.random() * 1000)}`;
     const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // Process shifts (array of shift objects)
+    const processedShifts = Array.isArray(shifts) ? shifts : [];
+
     try {
-      // Create user in database
+      // Create collaborator in database
       const user = await prisma.user.create({
         data: {
           id: userId,
-          email,
+          email: email || `${login}@${tenant.name.toLowerCase().replace(/\s+/g, '')}.local`,
           name,
-          password: tempPassword,
+          password,
           role,
           tenantId: tenant.id,
+          phone,
+          shifts: JSON.stringify(processedShifts),
           isActive: true,
-          emailVerified: false,
-          isTemporaryPassword: true
+          emailVerified: true, // No need for email verification
+          isTemporaryPassword: false
         }
       });
-
-      // Send invitation email
-      const inviteResult = await emailVerificationService.sendInvitationEmail(
-        email, 
-        name, 
-        tenant.name, 
-        tempPassword
-      );
 
       res.json({
         success: true,
         user: {
           id: user.id,
-          email: user.email,
           name: user.name,
+          phone: user.phone,
           role: user.role,
-          isActive: user.isActive
+          shifts: processedShifts,
+          login,
+          password, // Show password for admin
+          isActive: user.isActive,
+          createdAt: new Date().toISOString()
         },
-        emailSent: inviteResult.success,
-        message: 'Usuário criado com sucesso! Convite enviado por email.'
+        message: 'Colaborador criado com sucesso!'
       });
 
     } catch (error) {
-      console.error('Database error, creating demo user:', error);
+      console.error('Database error, creating demo collaborator:', error);
       
       // Demo response
       res.json({
         success: true,
         user: {
           id: userId,
-          email,
           name,
+          phone,
           role,
-          isActive: true
+          shifts: processedShifts,
+          login,
+          password,
+          isActive: true,
+          createdAt: new Date().toISOString()
         },
-        emailSent: true,
-        tempPassword, // Only for demo
-        message: 'Usuário criado com sucesso! (modo demo)'
+        message: 'Colaborador criado com sucesso! (modo demo)'
       });
     }
 
