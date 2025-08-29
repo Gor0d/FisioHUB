@@ -1406,7 +1406,7 @@ app.post('/api/indicators/feed-bulk/:tenantId', async (req, res) => {
         const result = {
           id: `bulk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           indicatorKey,
-          value: parseInt(value as string),
+          value: parseInt(value),
           shift,
           sector,
           sectorType,
