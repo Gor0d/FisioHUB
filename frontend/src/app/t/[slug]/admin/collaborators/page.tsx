@@ -27,12 +27,22 @@ import { cn } from '@/lib/utils';
 
 interface User {
   id: string;
-  email: string;
+  email?: string;
   name: string;
+  phone: string;
   role: string;
+  shifts?: string | Shift[];
+  login?: string;
+  password?: string;
   createdAt: string;
   lastLoginAt: string | null;
   isActive: boolean;
+}
+
+interface Shift {
+  id: number;
+  name: string;
+  hours: string;
 }
 
 interface ProductivityStats {
@@ -44,6 +54,17 @@ interface ProductivityStats {
   startDate: string;
   endDate: string;
 }
+
+const getShiftHours = (shiftName: string): string => {
+  const shiftMap: Record<string, string> = {
+    'Matutino': '06:00-18:00',
+    'Vespertino': '12:00-00:00',
+    'Noturno': '18:00-06:00',
+    'Administrativo': '08:00-17:00',
+    'Plantão': '12x36h'
+  };
+  return shiftMap[shiftName] || '08:00-17:00';
+};
 
 export default function CollaboratorsPage() {
   const { tenant, loading: tenantLoading } = useTenant();
@@ -58,9 +79,10 @@ export default function CollaboratorsPage() {
   const [productivity, setProductivity] = useState<ProductivityStats | null>(null);
 
   const [newUser, setNewUser] = useState({
-    email: '',
     name: '',
-    role: 'physiotherapist'
+    phone: '',
+    role: 'physiotherapist',
+    shifts: [{ id: 1, name: 'Matutino', hours: '06:00-18:00' }]
   });
 
   const fetchUsers = async () => {
@@ -126,14 +148,11 @@ export default function CollaboratorsPage() {
 
       if (data.success) {
         setUsers([data.user, ...users]);
-        setNewUser({ email: '', name: '', role: 'physiotherapist' });
+        setNewUser({ name: '', phone: '', role: 'physiotherapist', shifts: [{ id: 1, name: 'Matutino', hours: '06:00-18:00' }] });
         setShowAddDialog(false);
         
-        // Show success message
-        alert(`Colaborador adicionado com sucesso! ${data.emailSent ? 'Convite enviado por email.' : ''}`);
-        if (data.tempPassword) {
-          alert(`Senha temporária: ${data.tempPassword}`);
-        }
+        // Show success message with login credentials
+        alert(`Colaborador criado com sucesso!\n\nLogin: ${data.user.login}\nSenha: ${data.user.password}\n\nAnote essas informações!`);
       } else {
         alert(`Erro: ${data.message}`);
       }
@@ -270,13 +289,13 @@ export default function CollaboratorsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="phone">Telefone</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                  placeholder="joao.silva@galileu.com.br"
+                  id="phone"
+                  type="tel"
+                  value={newUser.phone}
+                  onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
+                  placeholder="(11) 99999-0000"
                   required
                 />
               </div>
@@ -293,13 +312,34 @@ export default function CollaboratorsPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="shifts">Turno Principal</Label>
+                <Select 
+                  value={newUser.shifts[0]?.name || 'Matutino'} 
+                  onValueChange={(value) => setNewUser({
+                    ...newUser, 
+                    shifts: [{id: 1, name: value, hours: getShiftHours(value)}]
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Matutino">Matutino (06:00-18:00)</SelectItem>
+                    <SelectItem value="Vespertino">Vespertino (12:00-00:00)</SelectItem>
+                    <SelectItem value="Noturno">Noturno (18:00-06:00)</SelectItem>
+                    <SelectItem value="Administrativo">Administrativo (08:00-17:00)</SelectItem>
+                    <SelectItem value="Plantão">Plantão 12h (Escala 12x36)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                   Cancelar
                 </Button>
                 <Button type="submit">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Enviar Convite
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Colaborador
                 </Button>
               </div>
             </form>
@@ -417,7 +457,18 @@ export default function CollaboratorsPage() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-gray-600 mb-2">{user.email}</p>
+                      <p className="text-gray-600 mb-2">📞 {user.phone}</p>
+                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                        {user.shifts && (() => {
+                          const shifts = typeof user.shifts === 'string' ? JSON.parse(user.shifts) : user.shifts;
+                          return shifts.map((shift: Shift, index: number) => (
+                            <div key={index} className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded">
+                              <span className="font-medium">{shift.name}</span>
+                              <span className="text-xs">({shift.hours})</span>
+                            </div>
+                          ));
+                        })()}
+                      </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
